@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>YT Automator — Dashboard</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #4b2e1d;
+    background: linear-gradient(135deg, #faf3e7 0%, #f3e3cc 45%, #ecd7b8 100%);
+    min-height: 100vh;
+  }
+  .wrap { padding: 32px; max-width: 1100px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.02em; }
+  h2 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: #6b4226; }
+  .sub { margin: 4px 0 0; font-size: 14px; color: #a97142; }
+  .card {
+    background: #fdf8ef; border: 1px solid #eadbc2; border-radius: 16px;
+    padding: 24px; margin-bottom: 20px; box-shadow: 0 6px 18px rgba(107,66,38,0.08);
+  }
+  .card p.desc { margin: 0 0 16px; font-size: 13px; color: #a97142; }
+  label.fld, .fld { font-size: 13px; font-weight: 600; color: #8a5a33; margin-bottom: 8px; display: block; }
+  input, select, textarea {
+    width: 100%; padding: 12px 14px; font-size: 14px; border-radius: 10px;
+    border: 1px solid #e0cdaf; background: #fffdf8; color: #4b2e1d; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid #d9803e; outline-offset: 1px; }
+  ::placeholder { color: #b49a7c; }
+  textarea { resize: vertical; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 24px;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600;
+    color: #8a5a33; background: #fdf8ef; border: 1px solid #e8d9c0; border-radius: 999px;
+    padding: 6px 14px; white-space: nowrap;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 999px; background: #4e9d5a; }
+  .grid2 { display: grid; grid-template-columns: 1fr 240px; gap: 14px; margin-bottom: 14px; }
+  .grid2sub { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .toggle-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg .tone { flex: 1 1 0; min-width: 92px; font-size: 13px; }
+  .opt {
+    flex: 1 1 0; min-width: 170px; cursor: pointer; padding: 10px 14px; border-radius: 12px;
+    border: 2px solid #e0cdaf; background: transparent; color: #a97142; font-family: inherit; text-align: left;
+  }
+  .opt.active { border-color: #8a5a33; background: #f1e2cd; color: #6b4226; }
+  .opt .t { display: block; font-size: 14px; font-weight: 700; }
+  .opt .d { display: block; font-size: 12px; margin-top: 2px; }
+  .tone { flex: 1 1 0; cursor: pointer; padding: 10px 14px; border-radius: 12px; border: 2px solid #e0cdaf;
+    background: transparent; color: #a97142; font-family: inherit; font-size: 14px; font-weight: 700; }
+  .tone.active { border-color: #8a5a33; background: #f1e2cd; color: #6b4226; }
+  .formats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fmt { cursor: pointer; text-align: left; padding: 16px; border-radius: 14px; border: 2px solid #e0cdaf;
+    background: transparent; font-family: inherit; color: #6b4226; }
+  .fmt.active { border-color: #8a5a33; background: #f1e2cd; }
+  .fmt .h { display: block; font-size: 15px; font-weight: 700; }
+  .fmt .r { font-weight: 500; color: #c68a55; }
+  .fmt .d { display: block; font-size: 13px; margin: 6px 0 12px; color: #a97142; }
+  .swatches { display: flex; gap: 8px; margin-bottom: 12px; }
+  .swatch { width: 24px; height: 24px; border-radius: 999px; border: 2px solid rgba(75,46,29,0.15); cursor: pointer; }
+  .swatch.active { border: 2px solid #4b2e1d; }
+  .start {
+    cursor: pointer; padding: 14px 36px; font-size: 16px; font-weight: 700; border-radius: 999px;
+    border: none; background: linear-gradient(135deg, #8a5a33, #6b4226); color: #faf3e7;
+    box-shadow: 0 8px 20px rgba(107,66,38,0.3); font-family: inherit;
+  }
+  .start:disabled { opacity: 0.55; cursor: not-allowed; }
+  .start-wrap { display: flex; justify-content: center; margin: 28px 0; }
+  .job { border: 1px solid #e5d4b9; border-radius: 12px; padding: 14px 16px; background: #fffdf8; }
+  .steps { display: flex; }
+  .step { display: flex; flex: 1; align-items: center; }
+  .step-inner { display: flex; align-items: center; gap: 8px; flex: 1; padding: 8px 6px; border-radius: 8px;
+    border: 1px solid transparent; }
+  .step-inner.running { background: #f6e7d2; border-color: #d9a877; }
+  .step-label { font-size: 12px; font-weight: 500; color: #d9a877; }
+  .step-inner.running .step-label { font-weight: 700; color: #6b4226; }
+  .step-inner.done .step-label { color: #a97142; }
+  .connector { width: 12px; height: 2px; background: #e0cdaf; flex-shrink: 0; }
+  .connector.done { background: #4e9d5a; }
+  .spinner { width: 14px; height: 14px; border-radius: 999px; border: 2px solid #8a5a33;
+    border-top-color: transparent; animation: ytSpin 0.8s linear infinite; flex-shrink: 0; }
+  .pending-dot { width: 10px; height: 10px; border-radius: 999px; border: 2px solid #dcc9ab; flex-shrink: 0; }
+  .badge { font-size: 12px; font-weight: 700; color: #4e9d5a; background: #e9f5ea; padding: 4px 10px;
+    border-radius: 999px; white-space: nowrap; }
+  .video-frame { border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: center; max-height: 340px; }
+  .dl {
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    padding: 12px 16px; font-size: 14px; font-weight: 700; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #8a5a33, #6b4226); color: #faf3e7; font-family: inherit;
+    box-shadow: 0 4px 12px rgba(107,66,38,0.25);
+  }
+  .dl svg { animation: ytDownloadBounce 2s ease-in-out infinite; }
+  .result { border: 1px solid #eadbc2; border-radius: 14px; padding: 16px; background: #fffdf8;
+    animation: ytFadeIn 0.5s ease-out; }
+  .result-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .status-chip { font-size: 11px; font-weight: 700; color: #8a5a33; background: #f3e6d2; padding: 3px 9px;
+    border-radius: 999px; white-space: nowrap; }
+  .job-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .btn-cancel { cursor: pointer; border: 1px solid #e0cdaf; background: transparent; color: #8a5a33;
+    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 8px; font-family: inherit; }
+  .job-bar { height: 6px; border-radius: 999px; background: #f0e0c8; overflow: hidden; margin-bottom: 12px; }
+  .job-bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #c68a55, #8a5a33); transition: width 0.4s ease; }
+  .job-note { margin: 10px 0 0; font-size: 12px; color: #a05a2c; display: none; }
+  .failed { border: 1px solid #e6b3a0; border-radius: 14px; padding: 16px; background: #fdf1ec; }
+  .failed.cancelled { border-color: #e0cdaf; background: #fdf8ef; }
+  .fail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .fail-badge { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; flex-shrink: 0;
+    color: #b23b1e; background: #f7ddd3; }
+  .failed.cancelled .fail-badge { color: #a97142; background: #f1e2cd; }
+  .fail-msg { margin: 8px 0 12px; font-size: 13px; color: #8a3a20; line-height: 1.5; }
+  .btn-retry { cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; font-size: 13px;
+    font-weight: 700; border-radius: 10px; border: none; background: linear-gradient(135deg, #8a5a33, #6b4226);
+    color: #faf3e7; font-family: inherit; box-shadow: 0 4px 12px rgba(107,66,38,0.22); }
+  .hidden { display: none !important; }
+  @keyframes ytSpin { to { transform: rotate(360deg); } }
+  @keyframes ytFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes ytDownloadBounce { 0%{transform:translateY(0);} 30%{transform:translateY(3px);} 60%{transform:translateY(0);} 100%{transform:translateY(0);} }
+
+  /* ---------- Layout style cards ---------- */
+  .field-hint { margin: 2px 0 10px; font-size: 12px; color: #c68a55; }
+  .layout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .layout-card { position: relative; cursor: pointer; border: 2px solid #e0cdaf; background: #fffdf8;
+    border-radius: 14px; padding: 12px; font-family: inherit; text-align: center; }
+  .layout-card.active { border-color: #d9803e; background: #fbf1e4; }
+  .layout-card .name { display: block; margin-top: 10px; font-size: 13px; font-weight: 700; color: #8a5a33; }
+  .layout-card.active .name { color: #6b4226; }
+  .layout-card .check { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 999px;
+    background: #d9803e; display: none; align-items: center; justify-content: center; z-index: 2; }
+  .layout-card.active .check { display: flex; }
+  .frame { position: relative; display: block; width: 100%; max-width: 104px; margin: 0 auto; aspect-ratio: 9 / 16;
+    border-radius: 10px; overflow: hidden; border: 1px solid #e5d4b9; }
+  .frame .band, .frame .vid { position: absolute; left: 0; right: 0; }
+  .frame .vid { background: linear-gradient(160deg, #e6c39d, #a97142); }
+
+  /* ---------- Subtitle preset cards ---------- */
+  .preset-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+  .preset-card { cursor: pointer; width: 100%; border: 2px solid #e0cdaf; background: #fffdf8;
+    border-radius: 14px; padding: 12px; font-family: inherit; text-align: left; }
+  .preset-card.active { border-color: #d9803e; background: #fbf1e4; }
+  .preset-preview { background: #f2e6d4; border-radius: 10px; padding: 16px 12px; min-height: 40px;
+    display: flex; align-items: center; justify-content: center; text-align: center; }
+  .preset-card .name { display: block; margin-top: 8px; font-size: 13px; font-weight: 700; color: #8a5a33; }
+  .preset-card.active .name { color: #6b4226; }
+
+  /* ---------- Subtitle position grid ---------- */
+  .pos-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .pos-cell { border: 2px solid #e6d6bd; border-radius: 10px; padding: 12px 6px; text-align: center;
+    background: #fdf8ef; color: #8a5a33; font-family: inherit; cursor: pointer; }
+  .pos-cell .pl { display: block; font-size: 12px; font-weight: 700; }
+  .pos-cell.active { border-color: #d9803e; color: #d9803e; background: #fbf1e4; }
+
+  /* ---------- iPad / tablet ---------- */
+  @media (max-width: 1023px) {
+    .wrap { padding: 24px; }
+    .grid2 { grid-template-columns: 1fr 1fr; }
+    .tone { flex: 1 1 0; }
+  }
+  /* ---------- Mobile ---------- */
+  @media (max-width: 639px) {
+    .wrap { padding: 16px; }
+    h1 { font-size: 26px; }
+    header { flex-direction: column; align-items: flex-start; }
+    .card { padding: 16px; }
+    .grid2 { grid-template-columns: 1fr; }
+    .grid2sub { grid-template-columns: 1fr; }
+    .opt { min-width: 100%; }
+    .tone-row { flex-direction: column; }
+    .tone { flex: 1 1 100%; }
+    .formats { grid-template-columns: 1fr; }
+    .steps { flex-direction: column; gap: 8px; }
+    .step-inner { padding: 6px 10px; }
+    .connector { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>YT Automator</h1>
+      <p class="sub">Turn any video into narrated highlight clips and countdown shorts.</p>
+    </div>
+    <span class="pill"><span class="dot" id="statusDot"></span><span id="statusText">System ready</span></span>
+  </header>
+
+  <!-- API key / CORS warning (shown when no key is configured) -->
+  <div id="apiWarning" class="hidden" style="display:flex; gap:10px; align-items:flex-start;
+    background:#fbecd6; border:1px solid #e6b877; border-radius:12px; padding:12px 16px;
+    margin-bottom:20px; color:#7a4a17; font-size:13px; line-height:1.5;">
+    <span style="font-size:16px; line-height:1;">⚠</span>
+    <span>Credentials not set. Open this file in an editor and set both
+    <code>EXCIDO_API_KEY</code> and <code>EXCIDO_USER_EMAIL</code> near the
+    top of the &lt;script&gt; block, then reload. Processing is disabled until both are present.
+    <br />Note: calling the API directly from a <code>file://</code> page may be blocked by CORS —
+    if requests fail, use the React app (<code>npm run dev</code>), which proxies around CORS.</span>
+  </div>
+
+  <!-- 1. VIDEO INGESTION -->
+  <section class="card">
+    <h2>1 · Video Ingestion</h2>
+    <p class="desc">Paste the link to the movie or show you want to process.</p>
+    <div class="grid2">
+      <input id="link" placeholder="Paste video link (YouTube, Vimeo, direct file…)" />
+      <select id="category">
+        <option>Movie</option><option>TV Show</option><option>Gaming</option><option>Podcast</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <span class="fld">…or upload a video file</span>
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <label style="cursor:pointer; padding:10px 16px; border-radius:10px; border:2px dashed #d9a877;
+          background:#fffdf8; color:#8a5a33; font-size:13px; font-weight:700;">
+          Choose file
+          <input id="fileInput" type="file" accept="video/*,audio/*" style="display:none;" />
+        </label>
+        <span id="fileInfo" style="font-size:12px; color:#c68a55;">Uploaded in 5 MB chunks. Takes priority over the link when set.</span>
+      </div>
+    </div>
+
+    <span class="fld">Slice Mode</span>
+    <div class="toggle-row" id="modeRow">
+      <button class="opt active" data-mode="clean">
+        <span class="t">Clean Mode</span><span class="d">Standard slicing of scenes</span>
+      </button>
+      <button class="opt" data-mode="cliffhanger">
+        <span class="t">Cliffhanger Mode</span><span class="d">Slice at moments of high tension or suspense</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- 2. CLIP SETTINGS -->
+  <section class="card">
+    <h2>2 · Clip Settings</h2>
+    <p class="desc">Control how each clip is cut, framed, and captioned.</p>
+
+    <span class="fld">Clip Duration</span>
+    <div class="toggle-row seg" id="durationRow" style="margin-bottom:16px;">
+      <button class="tone active" data-value="auto">Auto</button>
+      <button class="tone" data-value="under30">Under 30s</button>
+      <button class="tone" data-value="30-60">30–60s</button>
+      <button class="tone" data-value="60-90">60–90s</button>
+    </div>
+
+    <span class="fld">Target Aspect Ratio</span>
+    <div class="toggle-row seg" id="aspectRow" style="margin-bottom:16px;">
+      <button class="tone active" data-value="16:9">16:9 · Landscape</button>
+      <button class="tone" data-value="9:16">9:16 · Vertical</button>
+      <button class="tone" data-value="1:1">1:1 · Square</button>
+      <button class="tone" data-value="4:5">4:5 · Portrait</button>
+    </div>
+
+    <span class="fld">Layout Style</span>
+    <p class="field-hint">Select the video framing layout for your clips.</p>
+    <div class="layout-grid" id="layoutRow">
+      <button class="layout-card active" data-value="glass">
+        <span class="check"><svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M5 10.5 L9 14 L15 6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="frame" style="background:linear-gradient(160deg,#c68a55,#6b4226);">
+          <span class="vid" style="top:30%; bottom:30%;"></span>
+          <span class="band" style="top:0; height:30%; background:rgba(247,236,221,0.38); border-bottom:1px solid rgba(255,255,255,0.4);"></span>
+          <span class="band" style="bottom:0; height:30%; background:rgba(247,236,221,0.38); border-top:1px solid rgba(255,255,255,0.4);"></span>
+        </span>
+        <span class="name">Glassmorphism</span>
+      </button>
+      <button class="layout-card" data-value="fit">
+        <span class="check"><svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M5 10.5 L9 14 L15 6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="frame" style="background:#4b2e1d;">
+          <span class="vid" style="top:27%; bottom:27%;"></span>
+        </span>
+        <span class="name">Fit Screen</span>
+      </button>
+      <button class="layout-card" data-value="stretched">
+        <span class="check"><svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M5 10.5 L9 14 L15 6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="frame" style="background:linear-gradient(160deg,#e6c39d,#a97142); display:flex; align-items:center; justify-content:center;">
+          <span style="font-size:9px; font-weight:700; letter-spacing:0.08em; color:rgba(75,46,29,0.55);">STRETCHED</span>
+        </span>
+        <span class="name">Stretched</span>
+      </button>
+      <button class="layout-card" data-value="elongated">
+        <span class="check"><svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M5 10.5 L9 14 L15 6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="frame" style="background:#f0dcc3; display:flex; align-items:center; justify-content:center; padding:8px;">
+          <span style="width:100%; height:100%; border:1.5px dashed #d9803e; border-radius:6px; background:rgba(217,128,62,0.06);"></span>
+        </span>
+        <span class="name">Elongated</span>
+      </button>
+    </div>
+
+    <span class="fld">Subtitle Preset</span>
+    <p class="field-hint">Choose how subtitles are displayed over your video.</p>
+    <div class="preset-list" id="subStyleRow">
+      <button class="preset-card active" data-value="standard">
+        <span class="preset-preview"><span style="font-size:14px; font-weight:600; color:#4b2e1d;">Here is your subtitle</span></span>
+        <span class="name">Standard Captions</span>
+      </button>
+      <button class="preset-card" data-value="bold">
+        <span class="preset-preview"><span style="font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:0.01em; color:#4b2e1d;">Here is <span style="color:#d9803e;">your</span> subtitle</span></span>
+        <span class="name">Bold Highlight</span>
+      </button>
+      <button class="preset-card" data-value="neon">
+        <span class="preset-preview"><span style="font-size:14px; font-weight:700; color:#fff; background:#2a1708; padding:6px 12px; border-radius:8px; box-shadow:0 0 10px rgba(217,128,62,0.55);">Here is your subtitle</span></span>
+        <span class="name">Neon Glow</span>
+      </button>
+    </div>
+
+    <span class="fld">Subtitle Size</span>
+    <div class="toggle-row seg" id="subSizeRow" style="margin-bottom:16px;">
+      <button class="tone" data-value="small">Small</button>
+      <button class="tone active" data-value="medium">Medium</button>
+      <button class="tone" data-value="large">Large</button>
+    </div>
+
+    <span class="fld">Subtitle Position</span>
+    <p class="field-hint">Choose where subtitles are overlaid on your video output.</p>
+    <div class="pos-grid" id="subPositionRow">
+      <button class="pos-cell" data-value="top-left"><span class="pl">Top Left</span></button>
+      <button class="pos-cell" data-value="top-centre"><span class="pl">Top Centre</span></button>
+      <button class="pos-cell" data-value="top-right"><span class="pl">Top Right</span></button>
+      <button class="pos-cell" data-value="mid-left"><span class="pl">Mid Left</span></button>
+      <button class="pos-cell" data-value="mid-centre"><span class="pl">Mid Centre</span></button>
+      <button class="pos-cell" data-value="mid-right"><span class="pl">Mid Right</span></button>
+      <button class="pos-cell" data-value="bot-left"><span class="pl">Bot Left</span></button>
+      <button class="pos-cell active" data-value="bot-centre"><span class="pl">Bot Centre</span></button>
+      <button class="pos-cell" data-value="bot-right"><span class="pl">Bot Right</span></button>
+    </div>
+  </section>
+
+  <!-- 3. OUTPUT FORMAT -->
+  <section class="card">
+    <h2>3 · Output Format</h2>
+    <p class="desc">Choose the end result you want to generate.</p>
+    <div class="formats">
+      <button class="fmt active" data-format="highlight" id="fmtHighlight">
+        <span class="h">Option A — Highlight Clips</span>
+        <span class="d">Individual highlight clips, fully customizable.</span>
+        <span class="fld">Border color</span>
+        <div class="swatches" id="swatches"></div>
+        <label class="fld" for="music">Background music</label>
+        <select id="music" onclick="event.stopPropagation()">
+          <option>Neon Nights (Synth)</option>
+          <option>Golden Hour (Lo-fi)</option>
+          <option>Rising Tension (Cinematic)</option>
+          <option>Chill Hop (Hip-hop)</option>
+          <option>Silence (No music)</option>
+        </select>
+      </button>
+      <button class="fmt" data-format="countdown" id="fmtCountdown">
+        <span class="h">Option B — Countdown Short</span>
+        <span class="d">Vertical short counting down the best scenes (3 → 2 → 1).</span>
+        <div id="topicWrap" class="hidden">
+          <label class="fld" for="topic">Countdown Topic</label>
+          <input id="topic" placeholder='e.g. "top 3 action scenes"' onclick="event.stopPropagation()" />
+        </div>
+      </button>
+    </div>
+  </section>
+
+  <div class="start-wrap">
+    <button class="start" id="startBtn" disabled>Start Process</button>
+  </div>
+
+  <!-- 4. PROCESSING DASHBOARD -->
+  <section class="card hidden" id="dashboard">
+    <h2>4 · Processing Dashboard</h2>
+    <div id="jobs" style="display:flex; flex-direction:column; gap:16px; margin-top:16px;"></div>
+  </section>
+</div>
+
+<!-- Player modal -->
+<div id="modal" class="hidden" style="position:fixed; inset:0; z-index:50; background:rgba(43,26,12,0.65);
+  display:flex; align-items:center; justify-content:center; padding:24px;">
+  <div style="width:100%; max-width:640px; border-radius:14px; overflow:hidden; background:#000;" onclick="event.stopPropagation()">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#111;">
+      <span style="color:#f0e6d5; font-size:13px; font-weight:700;">Your Generated Video</span>
+      <button id="closeModal" aria-label="Close" style="cursor:pointer; border:none; background:rgba(255,255,255,0.1);
+        color:#fff; width:28px; height:28px; border-radius:999px; font-size:14px;">✕</button>
+    </div>
+    <div id="modalFrame" style="position:relative; aspect-ratio:16/9; max-height:60vh; background:radial-gradient(circle at 30% 30%, #6b4226, #2a1708 70%);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#fff;">
+      <svg width="52" height="52" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.18)"/>
+        <path d="M20 16 L34 24 L20 32 Z" fill="#fff"/>
+      </svg>
+      <p style="margin:0; font-size:13px; color:#f0e6d5;">Preview unavailable — no playable URL in the job result yet.</p>
+    </div>
+    <div id="modalFooter" style="padding:12px 16px; background:#111;">
+      <div style="height:4px; border-radius:999px; background:rgba(255,255,255,0.15); overflow:hidden;">
+        <div style="width:38%; height:100%; background:#d9803e;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:#c9bda9;">
+        <span>01:24</span><span>03:42</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  Excido API — standalone configuration
+  //  This page can run from file:// or any static host, so it
+  //  can't read Vite env vars. Set your key + base URL here.
+  //
+  //  ⚠ CORS: a browser page on file:// or a different origin than
+  //  the API may be blocked by CORS. If requests fail with a CORS
+  //  error, either serve this file from an allowed origin, or use
+  //  the React app (npm run dev) which proxies /excido around CORS.
+  // ============================================================
+  const EXCIDO_API_BASE  = "https://api.excido.app"; // API origin, no trailing slash
+  const EXCIDO_API_KEY   = "";                        // <-- paste your API key here
+  const EXCIDO_USER_EMAIL = "";                       // <-- paste your account email here
+
+  // ---- Excido client (mirrors src/api/excido.js) ----
+  const API_BASE = String(EXCIDO_API_BASE || "https://api.excido.app").replace(/\/$/, "");
+  const CHUNK_SIZE = 5 * 1024 * 1024;
+  // Both the key and the email are required for any request to succeed.
+  const hasApiKey = () => Boolean(EXCIDO_API_KEY && EXCIDO_USER_EMAIL);
+
+  const DURATION_MAP = { auto: "60", under30: "30", "30-60": "60", "60-90": "90" };
+  const DIMENSION_MAP = { "16:9": "16:9", "9:16": "9:16", "1:1": "1:1", "4:5": "9:16" };
+  const EFFECT_MAP = { glass: "glassmorphism", fit: "full", stretched: "full", elongated: "split" };
+  const SUBTITLE_STYLE_MAP = { standard: "standard", bold: "highlight", neon: "karaoke" };
+  const SUBTITLE_SIZE_MAP = { small: 40, medium: 60, large: 80 };
+  const SUBTITLE_POSITION_MAP = {
+    "top-left": "top-centre", "top-centre": "top-centre", "top-right": "top-centre",
+    "mid-left": "mid-centre", "mid-centre": "mid-centre", "mid-right": "mid-centre",
+    "bot-left": "bot-centre", "bot-centre": "bot-centre", "bot-right": "bot-centre",
+  };
+  const DEFAULT_SUBTITLE_COLOR = "#FFFFFF";
+  const DEFAULT_SUBTITLE_FONT = "Oswald";
+  const DEFAULT_LANGUAGE = "auto";
+
+  // API's canonical pipeline steps (fixed order) with friendly labels.
+  const API_STEPS = [
+    { id: "uploading", label: "Uploading / Verifying" },
+    { id: "generating_clips", label: "Finding Highlights" },
+    { id: "transcribing", label: "Transcribing" },
+    { id: "generating_metadata", label: "Generating Metadata" },
+    { id: "encoding_video", label: "Encoding & Subtitles" },
+  ];
+  const STEPS = API_STEPS; // used by buildJobRow
+  const STATUS_LABEL = { uploading: "Uploading", creating: "Creating job", queued: "Queued", pending: "Queued", running: "Processing", processing: "Processing" };
+  const TERMINAL = ["completed", "failed", "cancelled"];
+  const isTerminal = (s) => TERMINAL.indexOf(s) !== -1;
+
+  function chunkCount(size) { return Math.max(1, Math.ceil(size / CHUNK_SIZE)); }
+
+  function buildSubtitle(ui) {
+    return {
+      style: SUBTITLE_STYLE_MAP[ui.subStyle] || "standard",
+      color: ui.subColor || DEFAULT_SUBTITLE_COLOR,
+      font: ui.subFont || DEFAULT_SUBTITLE_FONT,
+      size: SUBTITLE_SIZE_MAP[ui.subSize] || 60,
+      position: SUBTITLE_POSITION_MAP[ui.subPosition] || "bot-centre",
+    };
+  }
+
+  function buildCreateJobPayload(ui, opts) {
+    opts = opts || {};
+    const payload = {
+      title: ui.title,
+      language: ui.language || DEFAULT_LANGUAGE,
+      desired_duration: DURATION_MAP[ui.duration] || "60",
+      dimension: DIMENSION_MAP[ui.aspect] || "9:16",
+      effect: EFFECT_MAP[ui.layout] || "full",
+      max_clips: ui.maxClips != null ? ui.maxClips : null,
+      media_metadata: opts.mediaMetadata != null ? opts.mediaMetadata : null,
+      subtitle: buildSubtitle(ui),
+    };
+    if (opts.videoId) payload.video_id = opts.videoId;
+    else if (opts.sourceUrl) payload.source_url = opts.sourceUrl;
+    return payload;
+  }
+
+  // Read a video file's real duration/width/height. The API requires all of
+  // { duration, width, height, size } inside media_metadata when it's present,
+  // so we probe before creating the job. Returns null for audio / undecodable
+  // files — null is valid, so job creation never blocks on the probe.
+  function probeMediaMetadata(file) {
+    return new Promise((resolve) => {
+      try {
+        if (!file || !/^video\//i.test(file.type || "")) { resolve(null); return; }
+        const url = URL.createObjectURL(file);
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        let settled = false;
+        const finish = (result) => {
+          if (settled) return;
+          settled = true;
+          URL.revokeObjectURL(url);
+          resolve(result);
+        };
+        video.onloadedmetadata = () => {
+          const width = video.videoWidth || 0;
+          const height = video.videoHeight || 0;
+          const duration = Number.isFinite(video.duration) ? Math.round(video.duration) : 0;
+          finish(width && height ? { duration: duration, width: width, height: height, size: file.size } : null);
+        };
+        video.onerror = () => finish(null);
+        setTimeout(() => finish(null), 8000);
+        video.src = url;
+      } catch (e) { resolve(null); }
+    });
+  }
+
+  function normaliseSteps(steps) {
+    const byId = {};
+    (steps || []).forEach((s) => { if (s && s.step) byId[s.step] = s; });
+    return API_STEPS.map((meta) => {
+      const m = byId[meta.id] || {};
+      return {
+        id: meta.id, label: meta.label,
+        status: m.status || "pending",
+        progress: typeof m.progress === "number" ? m.progress : 0,
+      };
+    });
+  }
+
+  // Derive the 5-step breakdown from the flat status fields (current_step,
+  // step_progress, status). The live API sends no per-step array, so we infer
+  // each step's state from where current_step sits in API_STEPS: earlier steps
+  // are done, the current one is processing, later ones pending. A terminal
+  // "completed" marks all done; an unknown/absent step leaves all pending.
+  function deriveSteps(data) {
+    if (data && data.status === "completed") {
+      return API_STEPS.map((m) => ({ id: m.id, label: m.label, status: "completed", progress: 100 }));
+    }
+    const currentId = data && data.current_step;
+    const stepProgress = data && typeof data.step_progress === "number" ? data.step_progress : 0;
+    const idx = API_STEPS.findIndex((m) => m.id === currentId);
+    return API_STEPS.map((m, i) => {
+      if (idx === -1) return { id: m.id, label: m.label, status: "pending", progress: 0 };
+      if (i < idx) return { id: m.id, label: m.label, status: "completed", progress: 100 };
+      if (i === idx) return { id: m.id, label: m.label, status: "processing", progress: stepProgress };
+      return { id: m.id, label: m.label, status: "pending", progress: 0 };
+    });
+  }
+
+  // The finished-file field name isn't fixed across API versions, so scan the
+  // likely keys (top-level and nested) and return the first URL we find.
+  function findDownloadUrl(result) {
+    if (!result || typeof result !== "object") return null;
+    const KEYS = ["output_url", "download_url", "result_url", "video_url", "url", "mp4_url", "file_url"];
+    const scan = (o) => {
+      if (!o || typeof o !== "object") return null;
+      for (const k of KEYS) { const v = o[k]; if (typeof v === "string" && /^https?:\/\//i.test(v)) return v; }
+      return null;
+    };
+    return scan(result) || scan(result.output) || scan(result.result) || scan(result.media) || scan(result.data) || null;
+  }
+
+  function authHeaders(extra) {
+    const h = Object.assign({}, extra || {});
+    // Excido uses an API-key header + account email, not a Bearer token.
+    if (EXCIDO_API_KEY) h["X-API-Key"] = EXCIDO_API_KEY;
+    if (EXCIDO_USER_EMAIL) h["X-User-Email"] = EXCIDO_USER_EMAIL;
+    return h;
+  }
+
+  async function request(path, opts) {
+    opts = opts || {};
+    const headers = authHeaders();
+    let body;
+    if (opts.form) { body = opts.form; }
+    else if (opts.json !== undefined) { headers["Content-Type"] = "application/json"; body = JSON.stringify(opts.json); }
+    let res;
+    try {
+      res = await fetch(API_BASE + path, { method: opts.method || "GET", headers, body, signal: opts.signal });
+    } catch (err) {
+      if (err && err.name === "AbortError") throw err;
+      throw new Error("Network/CORS error calling " + path + ": " + err.message);
+    }
+    let parsed = null;
+    const text = await res.text();
+    if (text) { try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; } }
+    if (!res.ok || (parsed && parsed.success === false)) {
+      const msg = (parsed && (parsed.message || parsed.error)) || ("Request to " + path + " failed (" + res.status + ")");
+      const e = new Error(msg); e.status = res.status; e.body = parsed; throw e;
+    }
+    return parsed || {};
+  }
+
+  // Phase 1 — resumable upload
+  function initUpload(info, opts) {
+    return request("/api/v1/media/upload/init", {
+      method: "POST",
+      json: { filename: info.filename, file_size: info.fileSize, total_chunks: info.totalChunks, mime_type: info.mimeType },
+      signal: opts && opts.signal,
+    }).then((b) => b.data);
+  }
+  function getUploadStatus(uploadId, opts) {
+    return request("/api/v1/media/upload/status?upload_id=" + encodeURIComponent(uploadId), { signal: opts && opts.signal }).then((b) => b.data);
+  }
+  function uploadChunk(args, opts) {
+    const form = new FormData();
+    form.append("upload_id", args.uploadId);
+    form.append("chunk_index", String(args.chunkIndex));
+    form.append("chunk", args.chunk);
+    return request("/api/v1/media/upload/chunk", { method: "POST", form, signal: opts && opts.signal });
+  }
+  function completeUpload(uploadId, opts) {
+    return request("/api/v1/media/upload/complete", { method: "POST", json: { upload_id: uploadId }, signal: opts && opts.signal }).then((b) => b.data);
+  }
+  async function uploadFile(file, opts) {
+    opts = opts || {};
+    const totalChunks = chunkCount(file.size);
+    const init = await initUpload(
+      { filename: file.name, fileSize: file.size, totalChunks, mimeType: file.type || "application/octet-stream" },
+      { signal: opts.signal }
+    );
+    const uploadId = init.upload_id;
+    let done = new Set();
+    try {
+      const st = await getUploadStatus(uploadId, { signal: opts.signal });
+      if (st && Array.isArray(st.uploaded_chunks)) done = new Set(st.uploaded_chunks);
+    } catch (e) { /* status is best-effort */ }
+    let completed = done.size;
+    if (opts.onProgress) opts.onProgress(totalChunks ? completed / totalChunks : 0);
+    for (let i = 0; i < totalChunks; i++) {
+      if (opts.signal && opts.signal.aborted) { const e = new Error("Upload cancelled"); e.name = "AbortError"; throw e; }
+      if (done.has(i)) continue;
+      const start = i * CHUNK_SIZE;
+      const chunk = file.slice(start, Math.min(start + CHUNK_SIZE, file.size));
+      await uploadChunk({ uploadId, chunkIndex: i, chunk }, { signal: opts.signal });
+      completed++;
+      if (opts.onProgress) opts.onProgress(totalChunks ? completed / totalChunks : 1);
+    }
+    return completeUpload(uploadId, { signal: opts.signal });
+  }
+
+  // Phase 2 — job creation
+  function createJob(payload, opts) {
+    return request("/api/v1/jobs/create", { method: "POST", json: payload, signal: opts && opts.signal }).then((b) => b.data);
+  }
+  // Phase 3 — status
+  function getJobStatus(jobId, opts) {
+    return request("/api/v1/jobs/" + encodeURIComponent(jobId) + "/status", { signal: opts && opts.signal }).then((b) => b.data);
+  }
+  function pollJobStatus(jobId, handlers) {
+    handlers = handlers || {};
+    const intervalMs = handlers.intervalMs || 5000;
+    let stopped = false, timer = null;
+    const tick = async () => {
+      if (stopped) return;
+      try {
+        const data = await getJobStatus(jobId);
+        if (stopped) return;
+        if (handlers.onUpdate) handlers.onUpdate(data);
+        if (data && isTerminal(data.status)) return;
+      } catch (err) {
+        if (stopped) return;
+        if (handlers.onError) handlers.onError(err);
+      }
+      if (!stopped) timer = setTimeout(tick, intervalMs);
+    };
+    tick();
+    return function stop() { stopped = true; if (timer) clearTimeout(timer); };
+  }
+  // Phase 4 — control
+  function cancelJob(jobId, opts) {
+    return request("/api/v1/jobs/" + encodeURIComponent(jobId) + "/cancel", { method: "POST", json: {}, signal: opts && opts.signal });
+  }
+  function retryJob(jobId, opts) {
+    return request("/api/v1/jobs/" + encodeURIComponent(jobId) + "/retry", { method: "POST", json: {}, signal: opts && opts.signal }).then((b) => b.data);
+  }
+
+  // ---- UI constants + state ----
+  const BORDERS = ["#8a5a33", "#d9803e", "#e6c39d", "#5b3a24", "#c68a55"];
+
+  const state = {
+    mode: "clean", format: "highlight", border: BORDERS[0], busy: false,
+    duration: "auto", aspect: "16:9", layout: "glass",
+    subStyle: "standard", subSize: "medium", subPosition: "bot-centre",
+    file: null,
+  };
+
+  const DURATION_LABELS = { auto: "Auto length", under30: "Under 30s", "30-60": "30–60s", "60-90": "60–90s" };
+  const LAYOUT_LABELS = { glass: "Glassmorphism", fit: "Fit Screen", stretched: "Stretched", elongated: "Elongated" };
+  const SUBSTYLE_LABELS = { standard: "Standard Captions", bold: "Bold Highlight", neon: "Neon Glow" };
+  const SUBPOS_LABELS = {
+    "top-left": "Top Left", "top-centre": "Top Centre", "top-right": "Top Right",
+    "mid-left": "Mid Left", "mid-centre": "Mid Centre", "mid-right": "Mid Right",
+    "bot-left": "Bot Left", "bot-centre": "Bot Centre", "bot-right": "Bot Right",
+  };
+
+  // Swatches
+  const swWrap = document.getElementById("swatches");
+  BORDERS.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.className = "swatch" + (i === 0 ? " active" : "");
+    b.style.background = c;
+    b.setAttribute("aria-label", "Border " + c);
+    b.onclick = (e) => {
+      e.stopPropagation();
+      state.border = c;
+      [...swWrap.children].forEach((s) => s.classList.remove("active"));
+      b.classList.add("active");
+    };
+    swWrap.appendChild(b);
+  });
+
+  // Mode toggle
+  document.getElementById("modeRow").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-mode]");
+    if (!btn) return;
+    state.mode = btn.dataset.mode;
+    document.querySelectorAll("#modeRow .opt").forEach((o) => o.classList.remove("active"));
+    btn.classList.add("active");
+  });
+
+  // Generic single-select button group (Clip Settings)
+  function wireGroup(rowId, stateKey) {
+    const row = document.getElementById(rowId);
+    row.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-value]");
+      if (!btn) return;
+      state[stateKey] = btn.dataset.value;
+      row.querySelectorAll("[data-value]").forEach((o) => o.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  }
+  wireGroup("durationRow", "duration");
+  wireGroup("aspectRow", "aspect");
+  wireGroup("layoutRow", "layout");
+  wireGroup("subStyleRow", "subStyle");
+  wireGroup("subSizeRow", "subSize");
+  wireGroup("subPositionRow", "subPosition");
+
+  // Format toggle
+  const topicWrap = document.getElementById("topicWrap");
+  function setFormat(fmt) {
+    state.format = fmt;
+    document.getElementById("fmtHighlight").classList.toggle("active", fmt === "highlight");
+    document.getElementById("fmtCountdown").classList.toggle("active", fmt === "countdown");
+    topicWrap.classList.toggle("hidden", fmt !== "countdown");
+  }
+  document.getElementById("fmtHighlight").addEventListener("click", () => setFormat("highlight"));
+  document.getElementById("fmtCountdown").addEventListener("click", () => setFormat("countdown"));
+
+  // File input
+  const fileInput = document.getElementById("fileInput");
+  const fileInfo = document.getElementById("fileInfo");
+  const DEFAULT_FILE_HINT = "Uploaded in 5 MB chunks. Takes priority over the link when set.";
+  fileInput.addEventListener("change", () => {
+    state.file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    if (state.file) {
+      fileInfo.innerHTML = state.file.name + " · " + (state.file.size / (1024 * 1024)).toFixed(1) +
+        ' MB &nbsp;<a href="#" id="clearFile" style="color:#d9803e; font-weight:700; text-decoration:none;">✕</a>';
+      const clear = document.getElementById("clearFile");
+      if (clear) clear.onclick = (e) => {
+        e.preventDefault();
+        state.file = null; fileInput.value = ""; fileInfo.textContent = DEFAULT_FILE_HINT; refreshStart();
+      };
+    } else {
+      fileInfo.textContent = DEFAULT_FILE_HINT;
+    }
+    refreshStart();
+  });
+
+  // Enable start only when a key is set AND (a link or a file is provided)
+  const linkInput = document.getElementById("link");
+  const startBtn = document.getElementById("startBtn");
+  function refreshStart() {
+    const canStart = !state.busy && hasApiKey() && (linkInput.value.trim() || state.file);
+    startBtn.disabled = !canStart;
+    if (!state.busy) startBtn.textContent = state.file ? "Upload & Process" : "Start Process";
+  }
+  linkInput.addEventListener("input", refreshStart);
+
+  function setBusy(v) {
+    state.busy = v;
+    document.getElementById("statusText").textContent = v ? "Processing…" : "System ready";
+    document.getElementById("statusDot").style.background = v ? "#d9803e" : "#4e9d5a";
+    startBtn.textContent = v ? "Processing…" : (state.file ? "Upload & Process" : "Start Process");
+    refreshStart();
+  }
+
+  // Show the API-key warning if no key is configured, and gate the button.
+  if (!hasApiKey()) document.getElementById("apiWarning").classList.remove("hidden");
+  refreshStart();
+
+  const checkSVG = '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex-shrink:0;">' +
+    '<circle cx="10" cy="10" r="9" fill="#4e9d5a"/>' +
+    '<path d="M6 10.5 L9 13.5 L14 7.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function buildJobRow(title, source) {
+    const wrap = document.createElement("div");
+    wrap.className = "job";
+    wrap.innerHTML =
+      '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;">' +
+        '<div style="min-width:0;">' +
+          '<p style="margin:0; font-weight:700; font-size:14px; color:#6b4226; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(title) + '</p>' +
+          '<p style="margin:2px 0 0; font-size:12px; color:#c68a55; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(source) + '</p>' +
+        '</div>' +
+        '<div class="job-controls">' +
+          '<span class="status-chip">Starting</span>' +
+          '<span class="progress" style="font-size:12px; font-weight:700; color:#a97142; white-space:nowrap;">0%</span>' +
+          '<button class="btn-cancel" type="button">Cancel</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="job-bar"><div class="job-bar-fill"></div></div>' +
+      '<div class="steps"></div>' +
+      '<p class="job-note"></p>';
+    const stepsEl = wrap.querySelector(".steps");
+    STEPS.forEach((meta, i) => {
+      const step = document.createElement("div");
+      step.className = "step";
+      step.innerHTML =
+        '<div class="step-inner"><span class="ico"><span class="pending-dot"></span></span>' +
+        '<span class="step-label">' + esc(meta.label) + '</span></div>' +
+        (i < STEPS.length - 1 ? '<span class="connector"></span>' : '');
+      stepsEl.appendChild(step);
+    });
+    return wrap;
+  }
+
+  const SUB_SAMPLE = "This changes everything";
+  function subtitleOverlay(style, size, position) {
+    const fs = size === "small" ? 13 : size === "large" ? 24 : 17;
+    const parts = String(position).split("-");
+    const vert = parts[0], horiz = parts[1];
+    const align = vert === "top" ? "flex-start" : vert === "mid" ? "center" : "flex-end";
+    const justify = horiz === "left" ? "flex-start" : horiz === "right" ? "flex-end" : "center";
+    const textAlign = horiz === "left" ? "left" : horiz === "right" ? "right" : "center";
+    const pad = vert === "mid" ? "0 16px" : "18px 16px";
+    let inner;
+    if (style === "bold") {
+      inner = '<span style="font-weight:900; font-size:' + (fs + 2) + 'px; color:#fff; text-transform:uppercase; letter-spacing:0.02em; line-height:1.15; text-shadow:0 2px 6px rgba(0,0,0,0.9);">This <span style="color:#d9803e;">changes</span> everything</span>';
+    } else if (style === "neon") {
+      inner = '<span style="display:inline-block; font-weight:700; font-size:' + fs + 'px; color:#fff; line-height:1.2; background:rgba(15,8,4,0.72); padding:6px 14px; border-radius:10px; border:1px solid rgba(217,128,62,0.6); box-shadow:0 0 14px rgba(217,128,62,0.75), 0 0 4px rgba(217,128,62,0.9);">' + SUB_SAMPLE + '</span>';
+    } else {
+      inner = '<span style="color:#fff; font-weight:600; font-size:' + fs + 'px; line-height:1.2; text-shadow:0 2px 6px rgba(0,0,0,0.9);">' + SUB_SAMPLE + '</span>';
+    }
+    return '<div style="position:absolute; inset:0; display:flex; align-items:' + align + '; justify-content:' + justify + '; padding:' + pad + '; text-align:' + textAlign + '; pointer-events:none;">' +
+      '<div style="max-width:84%;">' + inner + '</div></div>';
+  }
+
+  function renderResult(wrap, meta, downloadUrl) {
+    const isHighlight = meta.format === "highlight";
+    const formatName = isHighlight ? "Highlight Clips" : "Countdown Short";
+    const ratioCSS = (meta.aspect || "16:9").replace(":", "/");
+    meta.downloadUrl = downloadUrl || null;
+    const dlHtml = downloadUrl
+      ? '<a class="dl" href="' + esc(downloadUrl) + '" download target="_blank" rel="noopener noreferrer" style="text-decoration:none;">'
+      : '<button class="dl" type="button">';
+    const dlClose = downloadUrl ? '</a>' : '</button>';
+    const dlLabel = downloadUrl ? 'Download MP4' : 'Download MP4 (link pending)';
+    wrap.className = "result";
+    wrap.innerHTML =
+      '<div class="result-head">' +
+        '<div style="min-width:0;">' +
+          '<p style="margin:0; font-weight:700; font-size:14px; color:#6b4226;">' + esc(meta.title) + '</p>' +
+          '<p style="margin:2px 0 0; font-size:12px; color:#a97142;">Ready — ' +
+            formatName + ' · ' + meta.aspect + ' · ' + DURATION_LABELS[meta.duration] + ' · ' + LAYOUT_LABELS[meta.layout] + '</p>' +
+          '<p style="margin:2px 0 0; font-size:12px; color:#c68a55;">Captions: ' +
+            SUBSTYLE_LABELS[meta.subStyle] + ' · ' + meta.subSize + ' · ' + (SUBPOS_LABELS[meta.subPosition] || meta.subPosition) + ' · Music: ' + esc(meta.music) + '</p>' +
+        '</div>' +
+        '<span class="badge">✓ Finished</span>' +
+      '</div>' +
+      '<div class="video-frame" style="position:relative; aspect-ratio:' + ratioCSS + ';">' +
+        '<button class="preview-btn" style="cursor:pointer; border:none; background:transparent; display:flex; flex-direction:column; align-items:center; gap:10px; color:#fff; font-family:inherit;">' +
+          '<svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4));">' +
+            '<circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.14)"/>' +
+            '<path d="M20 16 L34 24 L20 32 Z" fill="#fff"/></svg>' +
+          '<span style="font-size:13px; color:#e8dcc9;">Preview</span>' +
+        '</button>' +
+        subtitleOverlay(meta.subStyle, meta.subSize, meta.subPosition) +
+      '</div>' +
+      dlHtml +
+        '<svg width="16" height="16" viewBox="0 0 20 20" fill="none">' +
+          '<path d="M10 3 L10 13 M10 13 L6 9 M10 13 L14 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<path d="M3 16 L17 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
+        dlLabel + dlClose;
+    wrap.querySelector(".preview-btn").onclick = () => openModal(meta);
+    if (!downloadUrl) {
+      wrap.querySelector(".dl").onclick = () =>
+        alert("The finished file URL wasn't included in the job status. Open the preview or check the Excido dashboard for the download.");
+    }
+  }
+
+  // ---- Live job machinery ----
+
+  // Update a row's step icons/labels from a normalised steps array.
+  function updateJobSteps(wrap, steps) {
+    const stepEls = [...wrap.querySelectorAll(".step-inner")];
+    const connectors = [...wrap.querySelectorAll(".connector")];
+    steps.forEach((s, i) => {
+      const inner = stepEls[i];
+      if (!inner) return;
+      const ico = inner.querySelector(".ico");
+      const target = s.status === "completed" ? "done" : s.status === "processing" ? "running" : "pending";
+      const current = inner.classList.contains("done") ? "done" : inner.classList.contains("running") ? "running" : "pending";
+      // Skip unchanged steps so we don't rewrite the icon every poll — that was
+      // restarting the spinner's CSS animation each tick (the "restart" flicker).
+      if (current === target) return;
+      inner.classList.remove("running", "done");
+      if (target === "done") {
+        inner.classList.add("done");
+        if (ico) ico.innerHTML = checkSVG;
+        if (connectors[i]) connectors[i].classList.add("done");
+      } else if (target === "running") {
+        inner.classList.add("running");
+        if (ico) ico.innerHTML = '<span class="spinner"></span>';
+        if (connectors[i]) connectors[i].classList.remove("done");
+      } else {
+        if (ico) ico.innerHTML = '<span class="pending-dot"></span>';
+        if (connectors[i]) connectors[i].classList.remove("done");
+      }
+    });
+  }
+
+  function setProgress(wrap, pct) {
+    pct = Math.max(0, Math.min(100, Math.round(pct || 0)));
+    // Monotonic: the server can briefly report a lower overall_progress just
+    // after a step boundary — never let the bar jump backwards.
+    pct = Math.max(pct, wrap._pct || 0);
+    wrap._pct = pct;
+    const bar = wrap.querySelector(".job-bar-fill");
+    if (bar) bar.style.width = pct + "%";
+    const p = wrap.querySelector(".progress");
+    if (p) p.textContent = pct + "%";
+  }
+  function setStatusChip(wrap, text) {
+    const chip = wrap.querySelector(".status-chip");
+    if (chip) chip.textContent = text;
+  }
+  function setNote(wrap, text) {
+    const note = wrap.querySelector(".job-note");
+    if (note) { note.textContent = text; note.style.display = text ? "block" : "none"; }
+  }
+
+  function renderFailed(wrap, meta, message, cancelled) {
+    wrap.className = "failed" + (cancelled ? " cancelled" : "");
+    wrap.innerHTML =
+      '<div class="fail-head">' +
+        '<div style="min-width:0;">' +
+          '<p style="margin:0; font-weight:700; font-size:14px; color:#6b4226; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(meta.title) + '</p>' +
+          '<p style="margin:2px 0 0; font-size:12px; color:#c68a55;">' + esc(meta.source) + '</p>' +
+        '</div>' +
+        '<span class="fail-badge">' + (cancelled ? "Cancelled" : "Failed") + '</span>' +
+      '</div>' +
+      (message ? '<p class="fail-msg">' + esc(message) + '</p>' : '') +
+      '<button class="btn-retry" type="button">' +
+        '<svg width="15" height="15" viewBox="0 0 20 20" fill="none">' +
+          '<path d="M4 10 a6 6 0 1 1 1.8 4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>' +
+          '<path d="M4 5.5 L4 10 L8.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>' +
+        'Retry</button>';
+    wrap.querySelector(".btn-retry").onclick = () => handleRetry(wrap, meta);
+  }
+
+  // Fold a status poll into the row; on terminal states, swap the row's view.
+  function applyStatus(wrap, meta, data) {
+    if (!data) return;
+    updateJobSteps(wrap, deriveSteps(data));
+    setProgress(wrap, typeof data.overall_progress === "number" ? data.overall_progress : 0);
+    setStatusChip(wrap, STATUS_LABEL[data.status] || "Processing");
+    setNote(wrap, data.status_message || "");
+    if (data.status === "completed") {
+      setBusy(false);
+      renderResult(wrap, meta, findDownloadUrl(data));
+    } else if (data.status === "failed") {
+      setBusy(false);
+      renderFailed(wrap, meta, data.error || "Processing failed", false);
+    } else if (data.status === "cancelled") {
+      setBusy(false);
+      renderFailed(wrap, meta, "Job was cancelled.", true);
+    }
+  }
+
+  // Rebuild a terminal row back into a fresh processing row (used by Retry).
+  function rebuildProcessing(wrap, meta) {
+    const fresh = buildJobRow(meta.title, meta.source);
+    wrap.className = "job";
+    wrap.innerHTML = fresh.innerHTML;
+    wrap._pct = 0; // reset the monotonic progress floor for the retry
+  }
+
+  // Upload (if a file) -> create job -> poll. Stores controls on the row.
+  async function startJob(wrap, meta, source) {
+    const ctrl = { abort: new AbortController(), stop: null, apiJobId: null };
+    wrap._ctrl = ctrl;
+    const cancelBtn = wrap.querySelector(".btn-cancel");
+    if (cancelBtn) cancelBtn.onclick = () => handleCancel(wrap, meta);
+
+    try {
+      let videoId = null, mediaMetadata = null;
+      if (source.file) {
+        setStatusChip(wrap, "Uploading");
+        const uploaded = await uploadFile(source.file, {
+          signal: ctrl.abort.signal,
+          onProgress: (frac) => setProgress(wrap, Math.round(frac * 100 * 0.15)),
+        });
+        videoId = uploaded.video_id;
+        mediaMetadata = await probeMediaMetadata(source.file);
+      }
+      setStatusChip(wrap, "Creating job");
+      const payload = buildCreateJobPayload(meta, {
+        videoId: videoId,
+        sourceUrl: videoId ? undefined : source.link,
+        mediaMetadata: mediaMetadata,
+      });
+      const created = await createJob(payload, { signal: ctrl.abort.signal });
+      ctrl.apiJobId = created.job_id;
+      setStatusChip(wrap, "Queued");
+      ctrl.stop = pollJobStatus(created.job_id, {
+        onUpdate: (data) => applyStatus(wrap, meta, data),
+        onError: (err) => setNote(wrap, "Status update hiccup: " + err.message + ". Still retrying…"),
+      });
+    } catch (err) {
+      setBusy(false);
+      if (err && err.name === "AbortError") renderFailed(wrap, meta, "Job was cancelled.", true);
+      else renderFailed(wrap, meta, err.message, false);
+    }
+  }
+
+  function handleCancel(wrap, meta) {
+    const ctrl = wrap._ctrl || {};
+    if (ctrl.stop) ctrl.stop();
+    if (ctrl.abort) ctrl.abort.abort();
+    setBusy(false);
+    renderFailed(wrap, meta, "Job was cancelled.", true);
+    if (ctrl.apiJobId) { cancelJob(ctrl.apiJobId).catch(() => {}); }
+  }
+
+  async function handleRetry(wrap, meta) {
+    const prev = wrap._ctrl || {};
+    rebuildProcessing(wrap, meta);
+    setBusy(true);
+
+    // No job id yet (failed before creation) -> run the whole flow again.
+    if (!prev.apiJobId) {
+      startJob(wrap, meta, meta._source || { link: meta.source });
+      return;
+    }
+    if (prev.stop) prev.stop();
+    const ctrl = { abort: new AbortController(), stop: null, apiJobId: prev.apiJobId };
+    wrap._ctrl = ctrl;
+    const cancelBtn = wrap.querySelector(".btn-cancel");
+    if (cancelBtn) cancelBtn.onclick = () => handleCancel(wrap, meta);
+    try {
+      const res = await retryJob(prev.apiJobId);
+      ctrl.apiJobId = res.job_id;
+      setStatusChip(wrap, "Queued");
+      ctrl.stop = pollJobStatus(res.job_id, {
+        onUpdate: (data) => applyStatus(wrap, meta, data),
+        onError: (err) => setNote(wrap, "Status update hiccup: " + err.message + ". Still retrying…"),
+      });
+    } catch (err) {
+      setBusy(false);
+      renderFailed(wrap, meta, err.message, false);
+    }
+  }
+
+  startBtn.addEventListener("click", () => {
+    const chosenFile = state.file;
+    const chosenLink = linkInput.value.trim();
+    if (state.busy || !hasApiKey() || (!chosenLink && !chosenFile)) return;
+    setBusy(true);
+
+    const category = document.getElementById("category").value;
+    const music = document.getElementById("music").value;
+    const topic = (document.getElementById("topic").value || "").trim();
+    const modeLabel = state.mode === "clean" ? "Clean Mode" : "Cliffhanger Mode";
+    let title = category + " · " + modeLabel;
+    if (state.format === "highlight") {
+      title += " · Highlight Clips";
+    } else {
+      title += " · Countdown Short" + (topic ? " — " + topic : "");
+    }
+
+    const sourceLabel = chosenFile ? chosenFile.name : chosenLink;
+    const meta = {
+      title: title, format: state.format, music: music, language: "auto",
+      duration: state.duration, aspect: state.aspect, layout: state.layout,
+      subStyle: state.subStyle, subSize: state.subSize, subPosition: state.subPosition,
+      source: sourceLabel, _source: { file: chosenFile, link: chosenLink },
+    };
+
+    document.getElementById("dashboard").classList.remove("hidden");
+    const jobsEl = document.getElementById("jobs");
+    const row = buildJobRow(title, sourceLabel);
+    jobsEl.prepend(row);
+    startJob(row, meta, { file: chosenFile, link: chosenLink });
+
+    // Consume the file selection so the next job starts clean.
+    state.file = null;
+    fileInput.value = "";
+    fileInfo.textContent = DEFAULT_FILE_HINT;
+  });
+
+  // Modal
+  const modal = document.getElementById("modal");
+  const modalFrame = document.getElementById("modalFrame");
+  const modalFooter = document.getElementById("modalFooter");
+  const MODAL_FRAME_BASE =
+    '<svg width="52" height="52" viewBox="0 0 48 48" fill="none">' +
+      '<circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.18)"/>' +
+      '<path d="M20 16 L34 24 L20 32 Z" fill="#fff"/></svg>' +
+    '<p style="margin:0; font-size:13px; color:#f0e6d5;">Preview unavailable — no playable URL in the job result yet.</p>';
+  function openModal(meta) {
+    if (meta) {
+      modalFrame.style.aspectRatio = (meta.aspect || "16:9").replace(":", "/");
+      if (meta.downloadUrl) {
+        modalFrame.innerHTML =
+          '<video src="' + esc(meta.downloadUrl) + '" controls autoplay ' +
+          'style="width:100%; height:100%; object-fit:contain; background:#000;"></video>';
+        modalFooter.style.display = "none"; // native controls replace the mock bar
+      } else {
+        modalFrame.innerHTML = MODAL_FRAME_BASE + subtitleOverlay(meta.subStyle, meta.subSize, meta.subPosition);
+        modalFooter.style.display = "block";
+      }
+    }
+    modal.classList.remove("hidden");
+  }
+  function closeModal() {
+    const v = modalFrame.querySelector("video");
+    if (v) v.pause();
+    modal.classList.add("hidden");
+  }
+  document.getElementById("closeModal").addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+</script>
+</body>
+</html>
