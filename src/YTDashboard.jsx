@@ -183,7 +183,11 @@ export default function YTDashboard() {
   const [subPosition, setSubPosition] = useState("bot-centre");
   const [jobs, setJobs] = useState([]);
   const [layout, setLayout] = useState(computeLayout);
-  const [playerJob, setPlayerJob] = useState(null);
+  // Which top-level view is showing: the builder or the results library.
+  const [view, setView] = useState("builder");
+  // How many finished videos the user has already seen on the Results tab.
+  // Drives the "new" badge/banner so freshly finished jobs get noticed.
+  const [seenResults, setSeenResults] = useState(0);
   const [file, setFile] = useState(null);
 
   // Per-job control handles: { stop } for the status poller and { abort }
@@ -196,6 +200,14 @@ export default function YTDashboard() {
   const ACTIVE_STATUSES = ["uploading", "creating", "queued", "processing"];
   const busy = jobs.some((j) => ACTIVE_STATUSES.includes(j.status));
   const apiKeyMissing = !hasApiKey();
+
+  // Finished videos populate the Results library; everything else (active work
+  // plus failed/cancelled jobs that still need a Retry) stays on the builder's
+  // processing dashboard.
+  const completedJobs = jobs.filter((j) => j.status === "completed");
+  const dashboardJobs = jobs.filter((j) => j.status !== "completed");
+  // Count of freshly finished videos the user hasn't opened on Results yet.
+  const newResults = Math.max(0, completedJobs.length - seenResults);
 
   useEffect(() => {
     const onResize = () => setLayout(computeLayout());
@@ -215,6 +227,12 @@ export default function YTDashboard() {
       });
     };
   }, []);
+
+  // While the Results tab is open, treat every finished video as "seen" so the
+  // new-results badge/banner clears (and stays cleared as more roll in).
+  useEffect(() => {
+    if (view === "results") setSeenResults(completedJobs.length);
+  }, [view, completedJobs.length]);
 
   // Merge a partial update into one job by id (patch may be an object or fn).
   const patchJob = (id, patch) =>
@@ -317,7 +335,6 @@ export default function YTDashboard() {
     };
 
     setJobs((prev) => [...prev, job]);
-    setPlayerJob(null);
     setFile(null); // consume the selection
 
     const abort = new AbortController();
@@ -408,8 +425,6 @@ export default function YTDashboard() {
     }
   };
 
-  const selectedSong = MUSIC.find((s) => s === music) || MUSIC[0];
-
   return (
     <div
       style={{
@@ -491,7 +506,137 @@ export default function YTDashboard() {
         </span>
       </header>
 
-      {apiKeyMissing && (
+      {/* ================= TAB BAR ================= */}
+      <div
+        role="tablist"
+        aria-label="Views"
+        style={{
+          display: "flex",
+          gap: 6,
+          background: CREAM_CARD,
+          border: "1px solid #eadbc2",
+          borderRadius: 999,
+          padding: 5,
+          marginBottom: 20,
+          width: layout.isMobile ? "100%" : "fit-content",
+        }}
+      >
+        {[
+          { id: "builder", label: "Builder" },
+          { id: "results", label: "Results" },
+        ].map((tab) => {
+          const active = view === tab.id;
+          const showBadge = tab.id === "results" && completedJobs.length > 0;
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setView(tab.id)}
+              style={{
+                flex: layout.isMobile ? "1 1 0" : "0 0 auto",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                padding: "9px 22px",
+                borderRadius: 999,
+                border: "none",
+                background: active
+                  ? "linear-gradient(135deg, #8a5a33, #6b4226)"
+                  : "transparent",
+                color: active ? CREAM : COFFEE[700],
+                fontFamily: "inherit",
+                fontSize: 14,
+                fontWeight: 700,
+                transition: "background 0.2s ease",
+              }}
+            >
+              {tab.label}
+              {showBadge && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: 20,
+                    height: 20,
+                    padding: "0 6px",
+                    borderRadius: 999,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    background: active
+                      ? "rgba(255,255,255,0.22)"
+                      : newResults > 0
+                      ? ACCENT
+                      : "#ecdcc3",
+                    color: active ? CREAM : newResults > 0 ? "#fff" : COFFEE[700],
+                  }}
+                >
+                  {completedJobs.length}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Nudge toward Results when a fresh video finishes while on the builder. */}
+      {view === "builder" && newResults > 0 && (
+        <button
+          onClick={() => setView("results")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            width: "100%",
+            textAlign: "left",
+            cursor: "pointer",
+            background: "#e9f5ea",
+            border: "1px solid #b6dcbb",
+            borderRadius: 12,
+            padding: "12px 16px",
+            marginBottom: 20,
+            color: "#2f6b39",
+            fontSize: 13,
+            fontWeight: 600,
+            fontFamily: "inherit",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 22,
+              height: 22,
+              borderRadius: 999,
+              background: "#4e9d5a",
+              flexShrink: 0,
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M6 10.5 L9 13.5 L14 7"
+                stroke="#fff"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          {newResults === 1
+            ? "Your video is ready — view it on the Results tab"
+            : `${newResults} new videos are ready — view them on the Results tab`}
+          <span style={{ marginLeft: "auto", fontWeight: 800 }}>→</span>
+        </button>
+      )}
+
+      {view === "builder" && (
+        <>
+          {apiKeyMissing && (
         <div
           style={{
             display: "flex",
@@ -993,7 +1138,7 @@ export default function YTDashboard() {
       </div>
 
       {/* ============ 4. PROCESSING DASHBOARD ============ */}
-      {jobs.length > 0 && (
+      {dashboardJobs.length > 0 && (
         <section
           style={{
             background: "rgba(253, 248, 239, 0.9)",
@@ -1015,15 +1160,9 @@ export default function YTDashboard() {
           </h2>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {jobs.map((job) => (
+            {dashboardJobs.map((job) => (
               <div key={job.id}>
-                {job.status === "completed" ? (
-                  <ResultCard
-                    job={job}
-                    song={job.music || selectedSong}
-                    onReplay={() => setPlayerJob(job)}
-                  />
-                ) : job.status === "failed" || job.status === "cancelled" ? (
+                {job.status === "failed" || job.status === "cancelled" ? (
                   <FailedCard job={job} onRetry={() => handleRetry(job)} />
                 ) : (
                   <JobRow
@@ -1037,11 +1176,16 @@ export default function YTDashboard() {
           </div>
         </section>
       )}
+        </>
+      )}
 
-      {playerJob && (
-        <Modal onClose={() => setPlayerJob(null)} layout={layout}>
-          <PlayerCard job={playerJob} onClose={() => setPlayerJob(null)} />
-        </Modal>
+      {/* ================= RESULTS LIBRARY ================= */}
+      {view === "results" && (
+        <ResultsView
+          jobs={completedJobs}
+          isMobile={layout.isMobile}
+          onMakeAnother={() => setView("builder")}
+        />
       )}
     </div>
   );
@@ -1313,161 +1457,495 @@ function JobRow({ job, isMobile, onCancel }) {
 }
 
 // ============================================================
-//  Result card — appears after the pipeline finishes
+//  Results library — a dedicated view listing every finished
+//  video (newest first). Each entry has a poster-before-play
+//  player, a settings summary, and download + copy-link actions.
 // ============================================================
-function ResultCard({ job, song, onReplay }) {
-  const downloadUrl = findDownloadUrl(job.result);
+
+// The status payload may carry a still/poster image under a few different
+// names; scan the same likely spots we use for the download URL and return
+// the first URL-looking hit. Used as the <video> poster and the play-teaser bg.
+function findPosterUrl(result) {
+  if (!result || typeof result !== "object") return null;
+  const KEYS = [
+    "thumbnail_url",
+    "thumbnail",
+    "poster_url",
+    "poster",
+    "preview_image",
+    "preview_url",
+    "image_url",
+    "thumb_url",
+  ];
+  const scan = (obj) => {
+    if (!obj || typeof obj !== "object") return null;
+    for (const k of KEYS) {
+      const v = obj[k];
+      if (typeof v === "string" && /^https?:\/\//i.test(v)) return v;
+    }
+    return null;
+  };
+  return (
+    scan(result) ||
+    scan(result.output) ||
+    scan(result.result) ||
+    scan(result.media) ||
+    scan(result.data) ||
+    null
+  );
+}
+
+function Chip({ children }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        fontSize: 12,
+        fontWeight: 600,
+        color: COFFEE[700],
+        background: "#f3e6d2",
+        border: "1px solid #ecdcc3",
+        borderRadius: 999,
+        padding: "4px 10px",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function ResultsView({ jobs, isMobile, onMakeAnother }) {
+  // Newest first — jobs are appended to the array in start order.
+  const videos = [...jobs].reverse();
+
+  return (
+    <section
+      style={{
+        background: CREAM_CARD,
+        border: "1px solid #eadbc2",
+        borderRadius: 16,
+        padding: isMobile ? 16 : 24,
+        boxShadow: "0 6px 18px rgba(107, 66, 38, 0.08)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "flex-start" : "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
+        <div>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: COFFEE[800] }}>
+            Your Videos
+          </h2>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: COFFEE[600] }}>
+            {videos.length
+              ? `${videos.length} finished ${
+                  videos.length === 1 ? "video" : "videos"
+                } — play, download, or share.`
+              : "Your finished videos will appear here."}
+          </p>
+        </div>
+        <button
+          onClick={onMakeAnother}
+          style={{
+            cursor: "pointer",
+            padding: "10px 20px",
+            fontSize: 14,
+            fontWeight: 700,
+            borderRadius: 999,
+            border: "none",
+            background: "linear-gradient(135deg, #8a5a33, #6b4226)",
+            color: CREAM,
+            fontFamily: "inherit",
+            boxShadow: "0 4px 12px rgba(107, 66, 38, 0.25)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          + Make another
+        </button>
+      </div>
+
+      {videos.length === 0 ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            gap: 12,
+            padding: "48px 20px",
+            border: "1.5px dashed #e0cdaf",
+            borderRadius: 14,
+            background: "#fffdf8",
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 999,
+              background: "#f3e6d2",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <rect
+                x="2.5"
+                y="5"
+                width="19"
+                height="14"
+                rx="2.5"
+                stroke={COFFEE[600]}
+                strokeWidth="1.8"
+              />
+              <path d="M10 9.5 L15 12 L10 14.5 Z" fill={COFFEE[600]} />
+            </svg>
+          </div>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: COFFEE[800] }}>
+            No finished videos yet
+          </p>
+          <p style={{ margin: 0, fontSize: 13, color: COFFEE[600], maxWidth: 340 }}>
+            Paste a link or upload a video on the Builder tab, then press Start. Your
+            rendered result will land here.
+          </p>
+          <button
+            onClick={onMakeAnother}
+            style={{
+              marginTop: 4,
+              cursor: "pointer",
+              padding: "10px 22px",
+              fontSize: 14,
+              fontWeight: 700,
+              borderRadius: 999,
+              border: `2px solid ${COFFEE[700]}`,
+              background: "transparent",
+              color: COFFEE[800],
+              fontFamily: "inherit",
+            }}
+          >
+            Go to Builder
+          </button>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile
+              ? "1fr"
+              : "repeat(auto-fill, minmax(320px, 1fr))",
+            gap: 18,
+          }}
+        >
+          {videos.map((job) => (
+            <VideoResultCard key={job.id} job={job} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function VideoResultCard({ job }) {
+  const [playing, setPlaying] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const videoUrl = findDownloadUrl(job.result);
+  const posterUrl = findPosterUrl(job.result);
+  const ratio = (job.aspect || "16:9").replace(":", " / ");
+
+  const noFileMsg =
+    "The finished file URL wasn't included in the job status. Check the Excido dashboard for the download.";
+
+  const copyLink = async () => {
+    if (!videoUrl) return;
+    try {
+      await navigator.clipboard.writeText(videoUrl);
+    } catch {
+      // Fallback for browsers without the async clipboard API (or file://).
+      const ta = document.createElement("textarea");
+      ta.value = videoUrl;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+      } catch {
+        /* ignore */
+      }
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  const chips = [
+    job.format === "highlight" ? "Highlight Clips" : "Countdown Short",
+    job.aspect,
+    labelOf(DURATIONS, job.duration),
+    labelOf(LAYOUTS, job.layoutStyle),
+    `${labelOf(SUBTITLE_STYLES, job.subStyle)} · ${job.subSize}`,
+    labelOf(SUB_POSITION_GRID, job.subPosition),
+  ];
+  if (job.format === "highlight" && job.music) chips.push(job.music);
+
   return (
     <div
       style={{
         animation: "ytFadeIn 0.5s ease-out",
         border: "1px solid #eadbc2",
         borderRadius: 14,
-        padding: 16,
         background: "#fffdf8",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: COFFEE[800] }}>
-            {job.title}
-          </p>
-          <p style={{ margin: "2px 0 0", fontSize: 12, color: COFFEE[600] }}>
-            Ready — {job.format === "highlight" ? "Highlight Clips" : "Countdown Short"}
-            {" · "}
-            {job.aspect} · {labelOf(DURATIONS, job.duration)} · {labelOf(LAYOUTS, job.layoutStyle)}
-          </p>
-          <p style={{ margin: "2px 0 0", fontSize: 12, color: COFFEE[500] }}>
-            Captions: {labelOf(SUBTITLE_STYLES, job.subStyle)} · {job.subSize} ·{" "}
-            {labelOf(SUB_POSITION_GRID, job.subPosition)}
-            {" · Music: "}
-            {song}
-          </p>
-        </div>
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#4e9d5a",
-            background: "#e9f5ea",
-            padding: "4px 10px",
-            borderRadius: 999,
-            whiteSpace: "nowrap",
-          }}
-        >
-          ✓ Finished
-        </span>
-      </div>
-
+      {/* Video / poster (poster-before-play: the file loads only on click) */}
       <div
         style={{
           position: "relative",
-          borderRadius: 12,
-          overflow: "hidden",
           background: "#000",
-          aspectRatio: (job.aspect || "16:9").replace(":", " / "),
-          maxHeight: 340,
-          marginBottom: 14,
+          aspectRatio: ratio,
+          maxHeight: 420,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          overflow: "hidden",
         }}
       >
-        <button
-          onClick={onReplay}
-          style={{
-            cursor: "pointer",
-            border: "none",
-            background: "transparent",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 10,
-            color: "#fff",
-            fontFamily: "inherit",
-          }}
-        >
-          <svg
-            width="48"
-            height="48"
-            viewBox="0 0 48 48"
-            fill="none"
+        {playing && videoUrl ? (
+          <video
+            src={videoUrl}
+            poster={posterUrl || undefined}
+            controls
+            autoPlay
             style={{
-              filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))",
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              background: "#000",
+            }}
+          />
+        ) : (
+          <button
+            onClick={() => (videoUrl ? setPlaying(true) : alert(noFileMsg))}
+            aria-label={videoUrl ? "Play video" : "Preview unavailable"}
+            style={{
+              position: "absolute",
+              inset: 0,
+              cursor: "pointer",
+              border: "none",
+              padding: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              color: "#fff",
+              fontFamily: "inherit",
+              background: posterUrl
+                ? `center / cover no-repeat url(${JSON.stringify(posterUrl)})`
+                : "radial-gradient(circle at 30% 30%, #6b4226, #2a1708 70%)",
             }}
           >
-            <circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.14)" />
-            <path
-              d="M20 16 L34 24 L20 32 Z"
-              fill="#fff"
-            />
-          </svg>
-          <span style={{ fontSize: 13, color: "#e8dcc9" }}>Preview</span>
-        </button>
-        <SubtitleOverlay
-          style={job.subStyle}
-          size={job.subSize}
-          position={job.subPosition}
-        />
+            <svg
+              width="54"
+              height="54"
+              viewBox="0 0 48 48"
+              fill="none"
+              style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))" }}
+            >
+              <circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.16)" />
+              <path d="M20 16 L34 24 L20 32 Z" fill="#fff" />
+            </svg>
+            <span style={{ fontSize: 13, color: "#f0e6d5", fontWeight: 600 }}>
+              {videoUrl ? "Play video" : "Preview unavailable"}
+            </span>
+            {!posterUrl && (
+              <SubtitleOverlay
+                style={job.subStyle}
+                size={job.subSize}
+                position={job.subPosition}
+              />
+            )}
+          </button>
+        )}
       </div>
 
-      <a
-        href={downloadUrl || undefined}
-        {...(downloadUrl ? { download: "", target: "_blank", rel: "noopener noreferrer" } : {})}
-        onClick={(e) => {
-          if (!downloadUrl) {
-            e.preventDefault();
-            alert(
-              "The finished file URL wasn't included in the job status. Open the preview or check the Excido dashboard for the download."
-            );
-          }
-        }}
-        style={{
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          width: "100%",
-          boxSizing: "border-box",
-          padding: "12px 16px",
-          fontSize: 14,
-          fontWeight: 700,
-          borderRadius: 10,
-          border: "none",
-          background: "linear-gradient(135deg, #8a5a33, #6b4226)",
-          color: CREAM,
-          fontFamily: "inherit",
-          textDecoration: "none",
-          boxShadow: "0 4px 12px rgba(107, 66, 38, 0.25)",
-        }}
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 20 20"
-          fill="none"
-          style={{ animation: "ytDownloadBounce 2s ease-in-out infinite" }}
+      {/* Meta + actions */}
+      <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
         >
-          <path
-            d="M10 3 L10 13 M10 13 L6 9 M10 13 L14 9"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path d="M3 16 L17 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-        {downloadUrl ? "Download MP4" : "Download MP4 (link pending)"}
-      </a>
+          <p
+            style={{
+              margin: 0,
+              fontWeight: 700,
+              fontSize: 15,
+              color: COFFEE[800],
+              lineHeight: 1.3,
+            }}
+          >
+            {job.title}
+          </p>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: "#4e9d5a",
+              background: "#e9f5ea",
+              padding: "4px 10px",
+              borderRadius: 999,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            ✓ Finished
+          </span>
+        </div>
+
+        <p
+          style={{
+            margin: 0,
+            fontSize: 12,
+            color: COFFEE[500],
+            wordBreak: "break-word",
+          }}
+        >
+          {job.sourceName || job.link}
+        </p>
+
+        {/* Settings summary */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {chips.map((c, i) => (
+            <Chip key={i}>{c}</Chip>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 10, marginTop: 2 }}>
+          <a
+            href={videoUrl || undefined}
+            {...(videoUrl
+              ? { download: "", target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+            onClick={(e) => {
+              if (!videoUrl) {
+                e.preventDefault();
+                alert(noFileMsg);
+              }
+            }}
+            style={{
+              flex: 1,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "11px 16px",
+              fontSize: 14,
+              fontWeight: 700,
+              borderRadius: 10,
+              border: "none",
+              background: "linear-gradient(135deg, #8a5a33, #6b4226)",
+              color: CREAM,
+              fontFamily: "inherit",
+              textDecoration: "none",
+              boxShadow: "0 4px 12px rgba(107, 66, 38, 0.22)",
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 20 20"
+              fill="none"
+              style={{ animation: "ytDownloadBounce 2s ease-in-out infinite" }}
+            >
+              <path
+                d="M10 3 L10 13 M10 13 L6 9 M10 13 L14 9"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M3 16 L17 16"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+            {videoUrl ? "Download MP4" : "Download (pending)"}
+          </a>
+          <button
+            onClick={copyLink}
+            disabled={!videoUrl}
+            aria-label="Copy shareable link"
+            style={{
+              cursor: videoUrl ? "pointer" : "not-allowed",
+              opacity: videoUrl ? 1 : 0.5,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "11px 16px",
+              fontSize: 14,
+              fontWeight: 700,
+              borderRadius: 10,
+              border: `2px solid ${copied ? "#4e9d5a" : "#e0cdaf"}`,
+              background: copied ? "#e9f5ea" : "transparent",
+              color: copied ? "#2f6b39" : COFFEE[700],
+              fontFamily: "inherit",
+              transition: "border-color 0.2s ease, background 0.2s ease",
+            }}
+          >
+            {copied ? (
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M5 10.5 L9 14 L15 6"
+                  stroke="#2f6b39"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <rect
+                  x="7"
+                  y="7"
+                  width="10"
+                  height="11"
+                  rx="1.5"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+                <path
+                  d="M12 7 V5 a1 1 0 0 0 -1 -1 H4 a1 1 0 0 0 -1 1 v9 a1 1 0 0 0 1 1 h2"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  fill="none"
+                />
+              </svg>
+            )}
+            {copied ? "Copied" : "Copy link"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1572,161 +2050,6 @@ function FailedCard({ job, onRetry }) {
         </svg>
         Retry
       </button>
-    </div>
-  );
-}
-
-// ============================================================
-//  Player modal — mock video player for the finished result
-// ============================================================
-function PlayerCard({ job, onClose }) {
-  const videoUrl = findDownloadUrl(job.result);
-  return (
-    <div
-      style={{
-        width: "100%",
-        maxWidth: 640,
-        borderRadius: 14,
-        overflow: "hidden",
-        background: "#000",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "12px 16px",
-          background: "#111",
-        }}
-      >
-        <span style={{ color: "#f0e6d5", fontSize: 13, fontWeight: 700 }}>
-          Your Generated Video
-        </span>
-        <button
-          onClick={onClose}
-          aria-label="Close preview"
-          style={{
-            cursor: "pointer",
-            border: "none",
-            background: "rgba(255,255,255,0.1)",
-            color: "#fff",
-            width: 28,
-            height: 28,
-            borderRadius: 999,
-            fontSize: 14,
-          }}
-        >
-          ✕
-        </button>
-      </div>
-
-      <div
-        style={{
-          position: "relative",
-          aspectRatio: (job.aspect || "16:9").replace(":", " / "),
-          maxHeight: "60vh",
-          background:
-            "radial-gradient(circle at 30% 30%, #6b4226, #2a1708 70%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-          color: "#fff",
-        }}
-      >
-        {videoUrl ? (
-          <video
-            src={videoUrl}
-            controls
-            autoPlay
-            style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000" }}
-          />
-        ) : (
-          <>
-            <svg
-              width="52"
-              height="52"
-              viewBox="0 0 48 48"
-              fill="none"
-              style={{ cursor: "pointer" }}
-            >
-              <circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.18)" />
-              <path d="M20 16 L34 24 L20 32 Z" fill="#fff" />
-            </svg>
-            <p style={{ margin: 0, fontSize: 13, color: "#f0e6d5" }}>
-              Preview unavailable — no playable URL in the job result yet.
-            </p>
-            <SubtitleOverlay
-              style={job.subStyle}
-              size={job.subSize}
-              position={job.subPosition}
-            />
-          </>
-        )}
-      </div>
-
-      {!videoUrl && (
-        <div style={{ padding: "12px 16px", background: "#111" }}>
-          <div
-            style={{
-              height: 4,
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.15)",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: "38%",
-                height: "100%",
-                background: "#d9803e",
-              }}
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginTop: 8,
-              fontSize: 11,
-              color: "#c9bda9",
-            }}
-          >
-            <span>01:24</span>
-            <span>03:42</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================================================
-//  Modal wrapper
-// ============================================================
-function Modal({ children, onClose, layout }) {
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 50,
-        background: "rgba(43, 26, 12, 0.65)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: layout.isMobile ? 12 : 24,
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 640 }}
-      >
-        {children}
-      </div>
     </div>
   );
 }

@@ -25,15 +25,75 @@ Then open the URL Vite prints (usually http://localhost:5173).
 └── yt-dashboard-preview.html   # standalone no-build preview (double-click to open)
 ```
 
-## The four sections
+# YT Automator — Dashboard
 
-1. **Video Ingestion** — link bar, category dropdown, Clean / Cliffhanger slice mode.
-2. **AI Settings** — commentary tone (Educational / Funny / Critical) + context/memory box.
-3. **Output Format** — Highlight Clips (16:9, border color + music) or Countdown Short (9:16, topic).
-4. **Processing Dashboard** — animated 5-step pipeline, then a result card with player + Download MP4.
+A single-page React dashboard for turning videos into narrated highlight clips
+and countdown shorts. Coffee + cream theme, responsive for mobile / iPad / desktop.
+The interface is split across two tabs — **Builder** (configure and start jobs) and
+**Results** (a library of every finished video) — that you can switch between at any time.
 
-> The pipeline is a front-end mock (timed steps). Wire the "Start Process" handler
-> in `YTDashboard.jsx` to your real backend when ready.
+## Run it
+
+```bash
+npm install
+npm run dev
+```
+
+Then open the URL Vite prints (usually http://localhost:5173).
+
+## Configure API access
+
+Processing calls the Excido API. Copy the example env file and fill in your credentials:
+
+```bash
+cp .env.example .env
+```
+
+Set `VITE_EXCIDO_API_KEY` and `VITE_EXCIDO_USER_EMAIL` (sent as the `X-API-Key` and
+`X-User-Email` headers). In local dev, leave `VITE_EXCIDO_API_BASE=/excido` to use the
+Vite proxy in `vite.config.js`, which forwards to `https://api.excido.app` and avoids
+CORS. Until both credentials are present, the Start button is disabled and a warning
+banner is shown.
+
+## Structure
+
+```
+├── index.html               # Vite entry HTML
+├── package.json
+├── vite.config.js           # dev server + /excido → api.excido.app proxy
+├── .env.example             # copy to .env and add your Excido credentials
+├── src/
+│   ├── main.jsx             # React entry point
+│   ├── index.css            # global resets
+│   ├── api/excido.js        # Excido client (upload → create → poll → cancel/retry)
+│   └── YTDashboard.jsx      # the dashboard component
+├── excido.selftest.mjs      # pure-function tests: node excido.selftest.mjs
+└── yt-dashboard-preview.html # standalone no-build preview (double-click to open)
+```
+
+## Builder tab
+
+1. **Video Ingestion** — link bar, category dropdown, file upload (5 MB resumable
+   chunks), and Clean / Cliffhanger slice mode.
+2. **Clip Settings** — clip duration, target aspect ratio, layout style
+   (Glassmorphism / Fit / Stretched / Elongated), and subtitle preset, size, and position.
+3. **Output Format** — Highlight Clips (border color + background music) or
+   Countdown Short (countdown topic).
+4. **Processing Dashboard** — a live 5-step pipeline driven by the Excido job status,
+   with Cancel and Retry. Jobs that are still running or have failed stay here; once a
+   job finishes it leaves the dashboard and appears on the Results tab.
+
+## Results tab
+
+A library of every finished video, newest first. The Results tab shows a count badge
+(highlighted when new videos have arrived while you were on the Builder), and a green
+nudge banner appears on the Builder when a job completes. Each card offers:
+
+- a **poster-before-play** player (loads the video only when you press play; uses the
+  API's thumbnail as the poster when available),
+- a **settings summary** of the options the clip was rendered with,
+- **Download MP4** and **Copy link** actions, and
+- a **Make another** button to jump back to the Builder.
 
 ## Build for production
 
@@ -41,3 +101,7 @@ Then open the URL Vite prints (usually http://localhost:5173).
 npm run build
 npm run preview
 ```
+
+> Note: `src/YTDashboard.jsx` (the React app) and `yt-dashboard-preview.html` (the
+> no-build preview) are intentional mirrors of the same UI — keep them in sync when
+> changing either.
