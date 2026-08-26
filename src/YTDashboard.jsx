@@ -185,7 +185,7 @@ export default function YTDashboard() {
   const [layout, setLayout] = useState(computeLayout);
   // Which top-level view is showing: the builder or the results library.
   const [view, setView] = useState("builder");
-  // How many finished videos the user has already seen on the Results tab.
+  // How many finished videos the user has already seen in the Library.
   // Drives the "new" badge/banner so freshly finished jobs get noticed.
   const [seenResults, setSeenResults] = useState(0);
   const [file, setFile] = useState(null);
@@ -206,7 +206,7 @@ export default function YTDashboard() {
   // processing dashboard.
   const completedJobs = jobs.filter((j) => j.status === "completed");
   const dashboardJobs = jobs.filter((j) => j.status !== "completed");
-  // Count of freshly finished videos the user hasn't opened on Results yet.
+  // Count of freshly finished videos the user hasn't opened in the Library yet.
   const newResults = Math.max(0, completedJobs.length - seenResults);
 
   useEffect(() => {
@@ -228,10 +228,10 @@ export default function YTDashboard() {
     };
   }, []);
 
-  // While the Results tab is open, treat every finished video as "seen" so the
+  // While the Library is open, treat every finished video as "seen" so the
   // new-results badge/banner clears (and stays cleared as more roll in).
   useEffect(() => {
-    if (view === "results") setSeenResults(completedJobs.length);
+    if (view === "library") setSeenResults(completedJobs.length);
   }, [view, completedJobs.length]);
 
   // Merge a partial update into one job by id (patch may be an object or fn).
@@ -479,82 +479,99 @@ export default function YTDashboard() {
             Turn any video into narrated highlight clips and countdown shorts.
           </p>
         </div>
-        <span
+        <div
           style={{
-            display: "inline-flex",
+            display: "flex",
             alignItems: "center",
-            gap: 8,
-            fontSize: 12,
-            fontWeight: 600,
-            color: COFFEE[700],
-            background: CREAM_CARD,
-            border: "1px solid #e8d9c0",
-            borderRadius: 999,
-            padding: "6px 14px",
-            whiteSpace: "nowrap",
+            gap: 10,
+            flexWrap: "wrap",
           }}
         >
           <span
             style={{
-              width: 8,
-              height: 8,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 12,
+              fontWeight: 600,
+              color: COFFEE[700],
+              background: CREAM_CARD,
+              border: "1px solid #e8d9c0",
               borderRadius: 999,
-              background: busy ? "#d9803e" : "#4e9d5a",
+              padding: "6px 14px",
+              whiteSpace: "nowrap",
             }}
-          />
-          {busy ? "Processing…" : "System ready"}
-        </span>
-      </header>
-
-      {/* ================= TAB BAR ================= */}
-      <div
-        role="tablist"
-        aria-label="Views"
-        style={{
-          display: "flex",
-          gap: 6,
-          background: CREAM_CARD,
-          border: "1px solid #eadbc2",
-          borderRadius: 999,
-          padding: 5,
-          marginBottom: 20,
-          width: layout.isMobile ? "100%" : "fit-content",
-        }}
-      >
-        {[
-          { id: "builder", label: "Builder" },
-          { id: "results", label: "Results" },
-        ].map((tab) => {
-          const active = view === tab.id;
-          const showBadge = tab.id === "results" && completedJobs.length > 0;
-          return (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={active}
-              onClick={() => setView(tab.id)}
+          >
+            <span
               style={{
-                flex: layout.isMobile ? "1 1 0" : "0 0 auto",
-                cursor: "pointer",
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background: busy ? "#d9803e" : "#4e9d5a",
+              }}
+            />
+            {busy ? "Processing…" : "System ready"}
+          </span>
+
+          {/* Library link — always in the top-right, on every view. */}
+          {view === "builder" ? (
+            <button
+              onClick={() => setView("library")}
+              aria-label={
+                completedJobs.length > 0
+                  ? `Open library, ${completedJobs.length} videos`
+                  : "Open library"
+              }
+              style={{
                 display: "inline-flex",
                 alignItems: "center",
-                justifyContent: "center",
                 gap: 8,
-                padding: "9px 22px",
-                borderRadius: 999,
-                border: "none",
-                background: active
-                  ? "linear-gradient(135deg, #8a5a33, #6b4226)"
-                  : "transparent",
-                color: active ? CREAM : COFFEE[700],
+                cursor: "pointer",
                 fontFamily: "inherit",
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: 700,
-                transition: "background 0.2s ease",
+                color: COFFEE[800],
+                background: CREAM_CARD,
+                border: "1px solid #e8d9c0",
+                borderRadius: 999,
+                padding: "6px 14px",
+                whiteSpace: "nowrap",
               }}
             >
-              {tab.label}
-              {showBadge && (
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 20 20"
+                fill="none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="3"
+                  y="3.5"
+                  width="4"
+                  height="13"
+                  rx="1"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+                <rect
+                  x="8.5"
+                  y="3.5"
+                  width="4"
+                  height="13"
+                  rx="1"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+                <path
+                  d="M14.6 4.9 L17 16.1"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              </svg>
+              Library
+              {completedJobs.length > 0 && (
                 <span
                   style={{
                     display: "inline-flex",
@@ -567,26 +584,44 @@ export default function YTDashboard() {
                     fontSize: 11,
                     fontWeight: 800,
                     lineHeight: 1,
-                    background: active
-                      ? "rgba(255,255,255,0.22)"
-                      : newResults > 0
-                      ? ACCENT
-                      : "#ecdcc3",
-                    color: active ? CREAM : newResults > 0 ? "#fff" : COFFEE[700],
+                    background: newResults > 0 ? ACCENT : "#ecdcc3",
+                    color: newResults > 0 ? "#fff" : COFFEE[700],
                   }}
                 >
                   {completedJobs.length}
                 </span>
               )}
             </button>
-          );
-        })}
-      </div>
+          ) : (
+            <button
+              onClick={() => setView("builder")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                fontSize: 13,
+                fontWeight: 700,
+                color: COFFEE[800],
+                background: CREAM_CARD,
+                border: "1px solid #e8d9c0",
+                borderRadius: 999,
+                padding: "6px 14px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span style={{ fontWeight: 800, fontSize: 15, lineHeight: 1 }}>←</span>
+              Back to builder
+            </button>
+          )}
+        </div>
+      </header>
 
-      {/* Nudge toward Results when a fresh video finishes while on the builder. */}
+      {/* Nudge toward the Library when a fresh video finishes while on the builder. */}
       {view === "builder" && newResults > 0 && (
         <button
-          onClick={() => setView("results")}
+          onClick={() => setView("library")}
           style={{
             display: "flex",
             alignItems: "center",
@@ -628,8 +663,8 @@ export default function YTDashboard() {
             </svg>
           </span>
           {newResults === 1
-            ? "Your video is ready — view it on the Results tab"
-            : `${newResults} new videos are ready — view them on the Results tab`}
+            ? "Your video is ready — open your Library to watch it"
+            : `${newResults} new videos are ready — open your Library to watch them`}
           <span style={{ marginLeft: "auto", fontWeight: 800 }}>→</span>
         </button>
       )}
@@ -1179,9 +1214,9 @@ export default function YTDashboard() {
         </>
       )}
 
-      {/* ================= RESULTS LIBRARY ================= */}
-      {view === "results" && (
-        <ResultsView
+      {/* ================= LIBRARY ================= */}
+      {view === "library" && (
+        <LibraryView
           jobs={completedJobs}
           isMobile={layout.isMobile}
           onMakeAnother={() => setView("builder")}
@@ -1457,9 +1492,9 @@ function JobRow({ job, isMobile, onCancel }) {
 }
 
 // ============================================================
-//  Results library — a dedicated view listing every finished
-//  video (newest first). Each entry has a poster-before-play
-//  player, a settings summary, and download + copy-link actions.
+//  Library — a dedicated page listing every finished video
+//  (newest first). Each entry has a poster-before-play player,
+//  a settings summary, and download + copy-link actions.
 // ============================================================
 
 // The status payload may carry a still/poster image under a few different
@@ -1516,7 +1551,7 @@ function Chip({ children }) {
   );
 }
 
-function ResultsView({ jobs, isMobile, onMakeAnother }) {
+function LibraryView({ jobs, isMobile, onMakeAnother }) {
   // Newest first — jobs are appended to the array in start order.
   const videos = [...jobs].reverse();
 
@@ -1541,8 +1576,28 @@ function ResultsView({ jobs, isMobile, onMakeAnother }) {
         }}
       >
         <div>
+          <button
+            onClick={onMakeAnother}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              cursor: "pointer",
+              background: "none",
+              border: "none",
+              padding: 0,
+              marginBottom: 8,
+              fontFamily: "inherit",
+              fontSize: 13,
+              fontWeight: 600,
+              color: COFFEE[600],
+            }}
+          >
+            <span style={{ fontWeight: 800, fontSize: 15, lineHeight: 1 }}>←</span>
+            Back to builder
+          </button>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: COFFEE[800] }}>
-            Your Videos
+            Your Library
           </h2>
           <p style={{ margin: "4px 0 0", fontSize: 13, color: COFFEE[600] }}>
             {videos.length

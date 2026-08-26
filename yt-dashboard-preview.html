@@ -120,19 +120,20 @@
   @keyframes ytFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes ytDownloadBounce { 0%{transform:translateY(0);} 30%{transform:translateY(3px);} 60%{transform:translateY(0);} 100%{transform:translateY(0);} }
 
-  /* ---------- Tabs (Builder / Results) ---------- */
-  .tabbar { display: inline-flex; gap: 4px; padding: 5px; margin-bottom: 20px;
-    background: #f3e6d2; border: 1px solid #ecdcc3; border-radius: 999px; }
-  .tab { cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px;
-    font-size: 14px; font-weight: 700; border-radius: 999px; border: none; background: transparent;
-    color: #8a5a33; font-family: inherit; }
-  .tab.active { background: linear-gradient(135deg, #8a5a33, #6b4226); color: #faf3e7;
-    box-shadow: 0 3px 10px rgba(107,66,38,0.25); }
-  .tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px;
-    height: 20px; padding: 0 6px; font-size: 12px; font-weight: 800; border-radius: 999px;
-    background: #e7d3b5; color: #8a5a33; }
-  .tab.active .tab-badge { background: rgba(255,255,255,0.35); color: #faf3e7; }
-  .tab-badge.new { background: #d9803e !important; color: #fff !important; }
+  /* ---------- Header Library link ---------- */
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .liblink { cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
+    font-size: 13px; font-weight: 700; border-radius: 999px; border: 1px solid #e8d9c0;
+    background: #fdf8ef; color: #6b4226; font-family: inherit; white-space: nowrap; }
+  .liblink:hover { background: #f7ecdd; }
+  .liblink svg { display: block; }
+  .lib-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px;
+    height: 20px; padding: 0 6px; font-size: 11px; font-weight: 800; line-height: 1; border-radius: 999px;
+    background: #ecdcc3; color: #8a5a33; }
+  .lib-badge.new { background: #d9803e; color: #fff; }
+  .lib-back { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: none;
+    border: none; padding: 0; margin-bottom: 8px; font-family: inherit; font-size: 13px; font-weight: 600; color: #a97142; }
+  .lib-back .bk { font-weight: 800; font-size: 15px; line-height: 1; }
 
   /* ---------- New-results nudge ---------- */
   .nudge { display: flex; align-items: center; gap: 10px; cursor: pointer; background: #e9f5ea;
@@ -140,7 +141,7 @@
     color: #2f6b39; font-size: 13px; font-weight: 600; }
   .nudge .arrow { margin-left: auto; font-weight: 800; }
 
-  /* ---------- Results library ---------- */
+  /* ---------- Library view ---------- */
   .results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
   .results-head h2 { margin: 0; }
   .make-another { cursor: pointer; padding: 10px 20px; font-size: 14px; font-weight: 700; border-radius: 999px;
@@ -238,8 +239,6 @@
     .connector { display: none; }
     .results-grid { grid-template-columns: 1fr; }
     .results-head { flex-direction: column; align-items: flex-start; }
-    .tabbar { display: flex; }
-    .tab { flex: 1; justify-content: center; }
   }
 </style>
 </head>
@@ -250,16 +249,21 @@
       <h1>YT Automator</h1>
       <p class="sub">Turn any video into narrated highlight clips and countdown shorts.</p>
     </div>
-    <span class="pill"><span class="dot" id="statusDot"></span><span id="statusText">System ready</span></span>
+    <div class="header-right">
+      <span class="pill"><span class="dot" id="statusDot"></span><span id="statusText">System ready</span></span>
+      <!-- Library link — top-right, shown on the builder view -->
+      <button class="liblink" id="libLink" aria-label="Open library">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <rect x="3" y="3.5" width="4" height="13" rx="1" stroke="currentColor" stroke-width="1.6"/>
+          <rect x="8.5" y="3.5" width="4" height="13" rx="1" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M14.6 4.9 L17 16.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Library <span class="lib-badge hidden" id="libBadge">0</span>
+      </button>
+      <!-- Back link — top-right, shown on the library view -->
+      <button class="liblink hidden" id="libBack"><span class="bk">←</span> Back to builder</button>
+    </div>
   </header>
-
-  <!-- Tabs: flip between the builder and the finished-video library -->
-  <div class="tabbar" role="tablist" aria-label="Views">
-    <button class="tab active" id="tabBuilder" role="tab" aria-selected="true">Builder</button>
-    <button class="tab" id="tabResults" role="tab" aria-selected="false">
-      Results <span class="tab-badge hidden" id="resultsBadge">0</span>
-    </button>
-  </div>
 
   <!-- New-results nudge (shown on the Builder when videos finish while you're here) -->
   <div class="nudge hidden" id="nudge" role="button" tabindex="0">
@@ -452,12 +456,13 @@
   </section>
   </div><!-- /builderView -->
 
-  <!-- ============ RESULTS VIEW ============ -->
+  <!-- ============ LIBRARY VIEW ============ -->
   <div id="resultsView" class="hidden">
     <section class="card">
       <div class="results-head">
         <div>
-          <h2>Your Videos</h2>
+          <button class="lib-back" id="headBack"><span class="bk">←</span> Back to builder</button>
+          <h2>Your Library</h2>
           <p class="sub" id="resultsSub">Your finished videos will appear here.</p>
         </div>
         <button class="make-another" id="makeAnother">+ Make another</button>
@@ -470,8 +475,8 @@
           </svg>
         </div>
         <p class="e-title">No finished videos yet</p>
-        <p class="e-sub">Paste a link or upload a video on the Builder tab, then press Start. Your rendered result will land here.</p>
-        <button class="go" id="emptyGoBuilder">Go to Builder</button>
+        <p class="e-sub">Paste a link or upload a video on the builder, then press Start. Your rendered result will land here.</p>
+        <button class="go" id="emptyGoBuilder">Go to builder</button>
       </div>
       <div id="resultsGrid" class="results-grid hidden"></div>
     </section>
@@ -771,7 +776,7 @@
     view: "builder", seenResults: 0,
   };
 
-  const DURATION_LABELS = { auto: "Auto length", under30: "Under 30s", "30-60": "30–60s", "60-90": "60–90s" };
+  const DURATION_LABELS = { auto: "Auto", under30: "Under 30s", "30-60": "30–60s", "60-90": "60–90s" };
   const LAYOUT_LABELS = { glass: "Glassmorphism", fit: "Fit Screen", stretched: "Stretched", elongated: "Elongated" };
   const SUBSTYLE_LABELS = { standard: "Standard Captions", bold: "Bold Highlight", neon: "Neon Glow" };
   const SUBPOS_LABELS = {
@@ -951,7 +956,7 @@
     return chips.map((c) => '<span class="chip">' + esc(c) + '</span>').join("");
   }
 
-  // Build one finished-video card for the Results library (poster-before-play).
+  // Build one finished-video card for the Library (poster-before-play).
   function buildVideoCard(meta, downloadUrl, posterUrl) {
     const ratioCSS = (meta.aspect || "16:9").replace(":", "/");
     const card = document.createElement("div");
@@ -1044,7 +1049,7 @@
     return card;
   }
 
-  // Move a finished job out of the dashboard and into the Results library.
+  // Move a finished job out of the dashboard and into the Library.
   function addCompletedVideo(wrap, meta, downloadUrl, posterUrl) {
     if (wrap) wrap.remove();                 // leaves the processing dashboard
     const grid = document.getElementById("resultsGrid");
@@ -1057,14 +1062,14 @@
     refreshResultsIndicators();
   }
 
-  // Keep the Results tab badge, sub-line, and Builder nudge in sync.
+  // Keep the Library-link badge, sub-line, and Builder nudge in sync.
   function refreshResultsIndicators() {
     const count = document.getElementById("resultsGrid").children.length;
-    const badge = document.getElementById("resultsBadge");
+    const badge = document.getElementById("libBadge");
     badge.textContent = count;
     badge.classList.toggle("hidden", count === 0);
     const newResults = Math.max(0, count - state.seenResults);
-    badge.classList.toggle("new", newResults > 0 && state.view !== "results");
+    badge.classList.toggle("new", newResults > 0 && state.view !== "library");
 
     document.getElementById("resultsSub").textContent = count
       ? count + (count === 1 ? " finished video" : " finished videos") + " — play, download, or share."
@@ -1073,24 +1078,24 @@
     const nudge = document.getElementById("nudge");
     if (state.view === "builder" && newResults > 0) {
       nudge.querySelector(".nudge-text").textContent = newResults === 1
-        ? "Your video is ready — view it on the Results tab"
-        : newResults + " new videos are ready — view them on the Results tab";
+        ? "Your video is ready — open your Library to watch it"
+        : newResults + " new videos are ready — open your Library to watch them";
       nudge.classList.remove("hidden");
     } else {
       nudge.classList.add("hidden");
     }
   }
 
-  // Flip between the Builder and Results views.
+  // Flip between the Builder and Library views.
   function setView(view) {
     state.view = view;
     const isBuilder = view === "builder";
     document.getElementById("builderView").classList.toggle("hidden", !isBuilder);
     document.getElementById("resultsView").classList.toggle("hidden", isBuilder);
-    const tb = document.getElementById("tabBuilder"), tr = document.getElementById("tabResults");
-    tb.classList.toggle("active", isBuilder); tb.setAttribute("aria-selected", String(isBuilder));
-    tr.classList.toggle("active", !isBuilder); tr.setAttribute("aria-selected", String(!isBuilder));
-    if (view === "results") state.seenResults = document.getElementById("resultsGrid").children.length;
+    // Header shows the Library link on the builder, the back link on the library.
+    document.getElementById("libLink").classList.toggle("hidden", !isBuilder);
+    document.getElementById("libBack").classList.toggle("hidden", isBuilder);
+    if (view === "library") state.seenResults = document.getElementById("resultsGrid").children.length;
     refreshResultsIndicators();
   }
 
@@ -1304,15 +1309,16 @@
     fileInfo.textContent = DEFAULT_FILE_HINT;
   });
 
-  // Tabs + results-view wiring
-  document.getElementById("tabBuilder").addEventListener("click", () => setView("builder"));
-  document.getElementById("tabResults").addEventListener("click", () => setView("results"));
+  // Library-link + library-view navigation
+  document.getElementById("libLink").addEventListener("click", () => setView("library"));
+  document.getElementById("libBack").addEventListener("click", () => setView("builder"));
+  document.getElementById("headBack").addEventListener("click", () => setView("builder"));
   document.getElementById("makeAnother").addEventListener("click", () => setView("builder"));
   document.getElementById("emptyGoBuilder").addEventListener("click", () => setView("builder"));
   const nudgeEl = document.getElementById("nudge");
-  nudgeEl.addEventListener("click", () => setView("results"));
+  nudgeEl.addEventListener("click", () => setView("library"));
   nudgeEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setView("results"); }
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setView("library"); }
   });
 </script>
 </body>

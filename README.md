@@ -1,36 +1,11 @@
 # YT Automator — Dashboard
 
 A single-page React dashboard for turning videos into narrated highlight clips
-and countdown shorts. Brown + cream theme, responsive for mobile / iPad / desktop.
-
-## Run it
-
-```bash
-npm install
-npm run dev
-```
-
-Then open the URL Vite prints (usually http://localhost:5173).
-
-## Structure
-
-```
-├── index.html               # Vite entry HTML
-├── package.json
-├── vite.config.js
-├── src/
-│   ├── main.jsx             # React entry point
-│   ├── index.css           # global resets
-│   └── YTDashboard.jsx     # the dashboard component
-└── yt-dashboard-preview.html   # standalone no-build preview (double-click to open)
-```
-
-# YT Automator — Dashboard
-
-A single-page React dashboard for turning videos into narrated highlight clips
 and countdown shorts. Coffee + cream theme, responsive for mobile / iPad / desktop.
-The interface is split across two tabs — **Builder** (configure and start jobs) and
-**Results** (a library of every finished video) — that you can switch between at any time.
+The app has two pages: the **Builder** (configure and start jobs) and the
+**Library** (every finished video). A **Library** link with a count badge sits in
+the top-right of the header on every view; the Library is a full page with a
+**← Back to builder** link.
 
 ## Run it
 
@@ -71,7 +46,7 @@ banner is shown.
 └── yt-dashboard-preview.html # standalone no-build preview (double-click to open)
 ```
 
-## Builder tab
+## Builder
 
 1. **Video Ingestion** — link bar, category dropdown, file upload (5 MB resumable
    chunks), and Clean / Cliffhanger slice mode.
@@ -81,13 +56,14 @@ banner is shown.
    Countdown Short (countdown topic).
 4. **Processing Dashboard** — a live 5-step pipeline driven by the Excido job status,
    with Cancel and Retry. Jobs that are still running or have failed stay here; once a
-   job finishes it leaves the dashboard and appears on the Results tab.
+   job finishes it leaves the dashboard and appears in the Library.
 
-## Results tab
+## Library
 
-A library of every finished video, newest first. The Results tab shows a count badge
-(highlighted when new videos have arrived while you were on the Builder), and a green
-nudge banner appears on the Builder when a job completes. Each card offers:
+A full page listing every finished video, newest first, reached from the **Library**
+link in the header. The link shows a count badge (highlighted when new videos have
+arrived while you were on the Builder), and a green nudge banner appears on the Builder
+when a job completes. The Library page has a **← Back to builder** link. Each card offers:
 
 - a **poster-before-play** player (loads the video only when you press play; uses the
   API's thumbnail as the poster when available),
